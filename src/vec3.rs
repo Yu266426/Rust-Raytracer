@@ -1,6 +1,6 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub};
 
-use rand::Rng;
+use rand::{thread_rng, Rng};
 
 use crate::image::color::Color;
 
@@ -48,7 +48,7 @@ impl Vec3 {
             let p = Self::random_range(-1.0, 1.0);
             let len_sq = p.length_squared();
 
-            if f64::EPSILON < len_sq && len_sq <= 1.0 {
+            if 1e-160 < len_sq && len_sq <= 1.0 {
                 return p / len_sq.sqrt();
             }
         }
@@ -62,6 +62,19 @@ impl Vec3 {
             unit_vec
         } else {
             -unit_vec
+        }
+    }
+
+    pub fn random_in_unit_disk() -> Self {
+        // Only return vectors (normalized) within a unit disk
+        let mut rng = thread_rng();
+
+        loop {
+            let p = Self::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0), 0.0);
+
+            if p.length_squared() < 1.0 {
+                return p;
+            }
         }
     }
 
@@ -96,17 +109,13 @@ impl Vec3 {
     }
 
     pub fn normalize(&self) -> Self {
-        let length = self.length();
-
-        Self {
-            x: self.x / length,
-            y: self.y / length,
-            z: self.z / length,
-        }
+        *self / self.length()
     }
 
     pub fn near_zero(&self) -> bool {
-        self.x < f64::EPSILON && self.y < f64::EPSILON && self.z < f64::EPSILON
+        let e = 1e-8;
+
+        self.x.abs() < e && self.y.abs() < e && self.z.abs() < e
     }
 
     pub fn reflected(&self, normal: &Self) -> Self {

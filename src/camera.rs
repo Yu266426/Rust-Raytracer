@@ -3,7 +3,7 @@ use std::{
     io::{self, Write},
 };
 
-use rand::{rngs::ThreadRng, Rng};
+use rand::{rngs::ThreadRng, thread_rng, Rng};
 
 use crate::{
     hittable::Hittable,
@@ -14,64 +14,93 @@ use crate::{
 };
 
 pub struct Camera {
-    _aspect_ratio: f64,
-    image_width: usize,
+    pub aspect_ratio: f64,
+    pub image_width: usize,
     image_height: usize,
-    center: Vec3,
-    vfov: f64,
+    pub vfov: f64,
+    pub center: Vec3,
+    pub look_at: Vec3,
+    pub v_up: Vec3,
     top_left_pixel_pos: Vec3,
     pixel_delta_u: Vec3,
     pixel_delta_v: Vec3,
-    samples_per_pixel: usize,
-    pixel_samples_scale: f64,
-    max_depth: usize,
+    pub samples_per_pixel: usize,
+    pub pixel_samples_scale: f64,
+    pub max_depth: usize,
     rng: RefCell<ThreadRng>,
 }
 
 impl Camera {
+    pub fn default() -> Self {
+        Self {
+            aspect_ratio: 1.0,
+            image_width: 100,
+            image_height: 0,
+            vfov: 90.0,
+            center: Vec3::zero(),
+            look_at: Vec3::new(0.0, 0.0, -1.0),
+            v_up: Vec3::new(0.0, 1.0, 0.0),
+            top_left_pixel_pos: Vec3::zero(),
+            pixel_delta_u: Vec3::zero(),
+            pixel_delta_v: Vec3::zero(),
+            samples_per_pixel: 10,
+            pixel_samples_scale: 0.0,
+            max_depth: 10,
+            rng: RefCell::new(thread_rng()),
+        }
+    }
+
     pub fn new(
         aspect_ratio: f64,
         image_width: usize,
         vfov: f64,
+        look_from: Vec3,
+        look_at: Vec3,
         samples_per_pixel: usize,
         max_depth: usize,
     ) -> Self {
-        let image_height = ((image_width as f64 / aspect_ratio) as usize).max(1);
-        let center = Vec3::new(0.0, 0.0, 0.0);
+        let mut camera = Self::default();
 
-        let focal_length = 1.0;
-        let theta = vfov.to_radians();
+        camera.aspect_ratio = aspect_ratio;
+        camera.image_width = image_width;
+        camera.vfov = vfov;
+        camera.center = look_from;
+        camera.look_at = look_at;
+        camera.samples_per_pixel = samples_per_pixel;
+        camera.max_depth = max_depth;
+
+        camera.initialize();
+
+        camera
+    }
+
+    fn initialize(&mut self) {
+        self.image_height = ((self.image_width as f64 / self.aspect_ratio) as usize).max(1);
+
+        self.pixel_samples_scale = 1.0 / self.samples_per_pixel as f64;
+
+        let focal_length = (self.look_at - self.center).length();
+        let theta = self.vfov.to_radians();
         let h = (theta / 2.0).tan();
-
         let viewport_height = 2.0 * h * focal_length;
-        let viewport_width = viewport_height * (image_width as f64 / image_height as f64);
-        let camera_center = Vec3::zero();
+        let viewport_width = viewport_height * (self.image_width as f64 / self.image_height as f64);
 
-        let viewport_u = Vec3::new(viewport_width, 0.0, 0.0);
-        let viewport_v = Vec3::new(0.0, -viewport_height, 0.0);
+        // u, v, w unit basis vectors for camera coordinate frame
+        let w = (self.center - self.look_at).normalize();
+        let u = self.v_up.cross(&w).normalize();
+        let v = w.cross(&u);
 
-        let pixel_delta_u = viewport_u / image_width as f64;
-        let pixel_delta_v = viewport_v / image_height as f64;
+        let viewport_u = viewport_width * u;
+        let viewport_v = viewport_height * -v;
+
+        self.pixel_delta_u = viewport_u / self.image_width as f64;
+        self.pixel_delta_v = viewport_v / self.image_height as f64;
 
         // Viewport goes in the negative z direction
         let viewport_top_left =
-            camera_center - Vec3::new(0.0, 0.0, focal_length) - 0.5 * (viewport_u + viewport_v);
-        let top_left_pixel_pos = viewport_top_left + 0.5 * (pixel_delta_u + pixel_delta_v);
-
-        Self {
-            _aspect_ratio: aspect_ratio,
-            image_width,
-            image_height,
-            center,
-            vfov,
-            top_left_pixel_pos,
-            pixel_delta_u,
-            pixel_delta_v,
-            samples_per_pixel,
-            pixel_samples_scale: 1.0 / samples_per_pixel as f64,
-            max_depth,
-            rng: RefCell::new(rand::thread_rng()),
-        }
+            self.center - focal_length * w - 0.5 * (viewport_u + viewport_v);
+        self.top_left_pixel_pos =
+            viewport_top_left + 0.5 * (self.pixel_delta_u + self.pixel_delta_v);
     }
 
     pub fn render(&self, world: &impl Hittable) -> Image {
