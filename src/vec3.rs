@@ -1,5 +1,7 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub};
 
+use rand::Rng;
+
 use crate::image::color::Color;
 
 #[derive(Debug, Clone, Copy)]
@@ -19,6 +21,47 @@ impl Vec3 {
             x: 0.0,
             y: 0.0,
             z: 0.0,
+        }
+    }
+
+    pub fn random() -> Self {
+        let mut rng = rand::thread_rng();
+        Self {
+            x: rng.gen(),
+            y: rng.gen(),
+            z: rng.gen(),
+        }
+    }
+
+    pub fn random_range(min: f64, max: f64) -> Self {
+        let mut rng = rand::thread_rng();
+        Self {
+            x: rng.gen_range(min..max),
+            y: rng.gen_range(min..max),
+            z: rng.gen_range(min..max),
+        }
+    }
+
+    pub fn random_unit() -> Self {
+        // Only return vectors (normalized) within a unit sphere
+        loop {
+            let p = Self::random_range(-1.0, 1.0);
+            let len_sq = p.length_squared();
+
+            if f64::EPSILON < len_sq && len_sq <= 1.0 {
+                return p / len_sq.sqrt();
+            }
+        }
+    }
+
+    pub fn random_unit_on_hemisphere(normal: &Self) -> Self {
+        let unit_vec = Self::random_unit();
+
+        if unit_vec.dot(&normal) > 0.0 {
+            // In same hemisphere as normal
+            unit_vec
+        } else {
+            -unit_vec
         }
     }
 
@@ -52,7 +95,7 @@ impl Vec3 {
         }
     }
 
-    pub fn unit(&self) -> Self {
+    pub fn normalize(&self) -> Self {
         let length = self.length();
 
         Self {
@@ -60,6 +103,14 @@ impl Vec3 {
             y: self.y / length,
             z: self.z / length,
         }
+    }
+
+    pub fn near_zero(&self) -> bool {
+        self.x < f64::EPSILON && self.y < f64::EPSILON && self.z < f64::EPSILON
+    }
+
+    pub fn reflected(&self, normal: &Self) -> Self {
+        *self - 2.0 * self.dot(normal) * *normal
     }
 }
 

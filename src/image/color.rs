@@ -30,15 +30,25 @@ impl Color {
 }
 
 impl Color {
+    fn linear_to_gamma_2(&self) -> Self {
+        Self {
+            r: self.r.max(0.0).sqrt(),
+            g: self.g.max(0.0).sqrt(),
+            b: self.b.max(0.0).sqrt(),
+        }
+    }
+
     pub fn as_u8_string(&self) -> String {
         static INTENSITY: Interval = Interval {
             min: 0.0,
             max: 0.999999,
         };
 
-        let r = (256.0 * INTENSITY.clamp(self.r)) as u8;
-        let g = (256.0 * INTENSITY.clamp(self.g)) as u8;
-        let b = (256.0 * INTENSITY.clamp(self.b)) as u8;
+        let gamma_color = self.linear_to_gamma_2();
+
+        let r = (256.0 * INTENSITY.clamp(gamma_color.r)) as u8;
+        let g = (256.0 * INTENSITY.clamp(gamma_color.g)) as u8;
+        let b = (256.0 * INTENSITY.clamp(gamma_color.b)) as u8;
 
         format!("{} {} {}", r, g, b)
     }
@@ -61,6 +71,18 @@ impl AddAssign for Color {
         self.r += rhs.r;
         self.g += rhs.g;
         self.b += rhs.b;
+    }
+}
+
+impl Mul for Color {
+    type Output = Color;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        Self::Output {
+            r: self.r * rhs.r,
+            g: self.g * rhs.g,
+            b: self.b * rhs.b,
+        }
     }
 }
 

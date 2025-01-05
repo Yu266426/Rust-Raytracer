@@ -2,20 +2,22 @@ pub mod sphere;
 
 use std::rc::Rc;
 
-use crate::{interval::Interval, ray::Ray, vec3::Vec3};
+use crate::{interval::Interval, material::Material, ray::Ray, vec3::Vec3};
 
 pub struct HitRecord {
     pub point: Vec3,
     pub normal: Vec3,
+    pub material: Rc<dyn Material>,
     pub t: f64,
     pub front_face: bool,
 }
 
 impl HitRecord {
-    fn new(ray: &Ray, t: f64) -> Self {
+    fn new(ray: &Ray, t: f64, material: Rc<dyn Material>) -> Self {
         Self {
             point: ray.at(t),
             normal: Vec3::zero(),
+            material,
             t,
             front_face: false,
         }

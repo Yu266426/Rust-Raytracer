@@ -14,7 +14,7 @@ use crate::{
 };
 
 pub struct Camera {
-    aspect_ratio: f64,
+    _aspect_ratio: f64,
     image_width: usize,
     image_height: usize,
     center: Vec3,
@@ -23,11 +23,17 @@ pub struct Camera {
     pixel_delta_v: Vec3,
     samples_per_pixel: usize,
     pixel_samples_scale: f64,
+    max_depth: usize,
     rng: RefCell<ThreadRng>,
 }
 
 impl Camera {
-    pub fn new(aspect_ratio: f64, image_width: usize, samples_per_pixel: usize) -> Self {
+    pub fn new(
+        aspect_ratio: f64,
+        image_width: usize,
+        samples_per_pixel: usize,
+        max_depth: usize,
+    ) -> Self {
         let image_height = ((image_width as f64 / aspect_ratio) as usize).max(1);
         let center = Vec3::new(0.0, 0.0, 0.0);
 
@@ -48,7 +54,7 @@ impl Camera {
         let top_left_pixel_pos = viewport_top_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
         Self {
-            aspect_ratio,
+            _aspect_ratio: aspect_ratio,
             image_width,
             image_height,
             center,
@@ -57,6 +63,7 @@ impl Camera {
             pixel_delta_v,
             samples_per_pixel,
             pixel_samples_scale: 1.0 / samples_per_pixel as f64,
+            max_depth,
             rng: RefCell::new(rand::thread_rng()),
         }
     }
@@ -73,7 +80,7 @@ impl Camera {
 
                 for _ in 0..self.samples_per_pixel {
                     let ray = self.get_ray(col, row);
-                    color += Camera::ray_color(&ray, world);
+                    color += Self::ray_color(&ray, self.max_depth, world);
                 }
 
                 image.set_pixel(color * self.pixel_samples_scale, row, col);
@@ -103,12 +110,20 @@ impl Camera {
         Vec3::new(rng.gen::<f64>() - 0.5, rng.gen::<f64>() - 0.5, 0.0)
     }
 
-    fn ray_color(ray: &Ray, world: &impl Hittable) -> Color {
-        if let Some(hit_record) = world.hit(ray, Interval::new(0.0, f64::INFINITY)) {
-            return 0.5 * (hit_record.normal + Vec3::new(1.0, 1.0, 1.0)).to_color();
+    fn ray_color(ray: &Ray, depth: usize, world: &impl Hittable) -> Color {
+        if depth == 0 {
+            return Color::black();
         }
 
-        let unit_direction = ray.direction.unit();
+        if let Some(hit_record) = world.hit(ray, Interval::new(0.001, f64::INFINITY)) {
+            if let Some((attenuation, scattered)) = hit_record.material.scatter(ray, &hit_record) {
+                return *attenuation * Self::ray_color(&scattered, depth - 1, world);
+            } else {
+                return Color::black();
+            }
+        }
+
+        let unit_direction = ray.direction.normalize();
         let a = 0.5 * (unit_direction.y + 1.0);
 
         (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
