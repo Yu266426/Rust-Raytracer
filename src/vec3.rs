@@ -112,6 +112,16 @@ impl Vec3 {
     pub fn reflected(&self, normal: &Self) -> Self {
         *self - 2.0 * self.dot(normal) * *normal
     }
+
+    pub fn refracted(&self, normal: &Self, refraction_index: f64) -> Self {
+        // Todo: Better name for last param? (Is it just ior?)
+
+        let cos = (-*self).dot(normal).min(1.0);
+        let r_out_perp = refraction_index * (*self + cos * *normal);
+        let r_out_parallel = -(1.0 - r_out_perp.length_squared()).abs().sqrt() * *normal;
+
+        r_out_perp + r_out_parallel
+    }
 }
 
 impl ToString for Vec3 {

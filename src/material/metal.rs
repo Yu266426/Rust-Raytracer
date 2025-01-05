@@ -1,5 +1,3 @@
-use std::{i8::MAX, ops::Not};
-
 use crate::{hittable::HitRecord, image::color::Color, ray::Ray, vec3::Vec3};
 
 use super::Material;
