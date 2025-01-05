@@ -1,4 +1,6 @@
-use std::ops::{Add, Mul};
+use std::ops::{Add, AddAssign, Mul};
+
+use crate::interval::Interval;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Color {
@@ -29,9 +31,14 @@ impl Color {
 
 impl Color {
     pub fn as_u8_string(&self) -> String {
-        let r = (self.r * 255.999) as u8;
-        let g = (self.g * 255.999) as u8;
-        let b = (self.b * 255.999) as u8;
+        static INTENSITY: Interval = Interval {
+            min: 0.0,
+            max: 0.999999,
+        };
+
+        let r = (256.0 * INTENSITY.clamp(self.r)) as u8;
+        let g = (256.0 * INTENSITY.clamp(self.g)) as u8;
+        let b = (256.0 * INTENSITY.clamp(self.b)) as u8;
 
         format!("{} {} {}", r, g, b)
     }
@@ -46,6 +53,14 @@ impl Add for Color {
             g: self.g + rhs.g,
             b: self.b + rhs.b,
         }
+    }
+}
+
+impl AddAssign for Color {
+    fn add_assign(&mut self, rhs: Self) {
+        self.r += rhs.r;
+        self.g += rhs.g;
+        self.b += rhs.b;
     }
 }
 

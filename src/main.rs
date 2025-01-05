@@ -14,7 +14,7 @@ fn main() {
     world.add(Rc::new(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0)));
 
     // Camera
-    let camera = Camera::new(16.0 / 9.0, 400);
+    let camera = Camera::new(16.0 / 9.0, 400, 100);
 
     camera.render(&world).save("test");
 }

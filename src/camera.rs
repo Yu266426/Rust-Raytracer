@@ -1,4 +1,9 @@
-use std::io::{self, Write};
+use std::{
+    cell::RefCell,
+    io::{self, Write},
+};
+
+use rand::{rngs::ThreadRng, Rng};
 
 use crate::{
     hittable::Hittable,
@@ -16,10 +21,13 @@ pub struct Camera {
     top_left_pixel_pos: Vec3,
     pixel_delta_u: Vec3,
     pixel_delta_v: Vec3,
+    samples_per_pixel: usize,
+    pixel_samples_scale: f64,
+    rng: RefCell<ThreadRng>,
 }
 
 impl Camera {
-    pub fn new(aspect_ratio: f64, image_width: usize) -> Self {
+    pub fn new(aspect_ratio: f64, image_width: usize, samples_per_pixel: usize) -> Self {
         let image_height = ((image_width as f64 / aspect_ratio) as usize).max(1);
         let center = Vec3::new(0.0, 0.0, 0.0);
 
@@ -47,6 +55,9 @@ impl Camera {
             top_left_pixel_pos,
             pixel_delta_u,
             pixel_delta_v,
+            samples_per_pixel,
+            pixel_samples_scale: 1.0 / samples_per_pixel as f64,
+            rng: RefCell::new(rand::thread_rng()),
         }
     }
 
@@ -58,20 +69,38 @@ impl Camera {
             io::stdout().flush().unwrap();
 
             for col in 0..self.image_width {
-                let pixel_center = self.top_left_pixel_pos
-                    + (col as f64 * self.pixel_delta_u)
-                    + (row as f64 * self.pixel_delta_v);
+                let mut color = Color::black();
 
-                let ray_direction = pixel_center - self.center;
-                let ray = Ray::new(self.center, ray_direction);
+                for _ in 0..self.samples_per_pixel {
+                    let ray = self.get_ray(col, row);
+                    color += Camera::ray_color(&ray, world);
+                }
 
-                let color = Self::ray_color(&ray, world);
-
-                image.set_pixel(color, row, col);
+                image.set_pixel(color * self.pixel_samples_scale, row, col);
             }
         }
+        println!("\rDone!                             ");
 
         image
+    }
+
+    fn get_ray(&self, col: usize, row: usize) -> Ray {
+        // Construct a camera ray from origin and directed at randomly sampled point around pixel location i, j
+
+        let offset = self.sample_square();
+        let pixel_sample_pos = self.top_left_pixel_pos
+            + (col as f64 + offset.x) * self.pixel_delta_u
+            + (row as f64 + offset.y) * self.pixel_delta_v;
+
+        let ray_origin = self.center;
+        let ray_direction = pixel_sample_pos - ray_origin;
+
+        Ray::new(ray_origin, ray_direction)
+    }
+
+    fn sample_square(&self) -> Vec3 {
+        let mut rng = self.rng.borrow_mut();
+        Vec3::new(rng.gen::<f64>() - 0.5, rng.gen::<f64>() - 0.5, 0.0)
     }
 
     fn ray_color(ray: &Ray, world: &impl Hittable) -> Color {
