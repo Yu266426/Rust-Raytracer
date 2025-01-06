@@ -48,6 +48,6 @@ impl Material for Dielectric {
                 .refracted(&hit_record.normal, refraction_index);
         }
 
-        Some((&self.albedo, Ray::new(hit_record.point, direction)))
+        Some((&self.albedo, Ray::new(hit_record.point, direction, ray.time)))
     }
 }

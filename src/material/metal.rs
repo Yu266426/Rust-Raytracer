@@ -20,7 +20,7 @@ impl Material for Metal {
         reflected = reflected.normalize() + (self.roughness * Vec3::random_unit());
 
         if reflected.dot(&hit_record.normal) > 0.0 {
-            Some((&self.albedo, Ray::new(hit_record.point, reflected)))
+            Some((&self.albedo, Ray::new(hit_record.point, reflected, ray.time)))
         } else {
             None
         }

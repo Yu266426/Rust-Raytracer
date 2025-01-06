@@ -1,6 +1,10 @@
+mod aabb;
+pub mod bvh;
 pub mod sphere;
 
 use std::rc::Rc;
+
+use aabb::AABB;
 
 use crate::{interval::Interval, material::Material, ray::Ray, vec3::Vec3};
 
@@ -13,7 +17,7 @@ pub struct HitRecord {
 }
 
 impl HitRecord {
-    fn new(ray: &Ray, t: f64, material: Rc<dyn Material>) -> Self {
+    pub fn new(ray: &Ray, t: f64, material: Rc<dyn Material>) -> Self {
         Self {
             point: ray.at(t),
             normal: Vec3::zero(),
@@ -23,7 +27,7 @@ impl HitRecord {
         }
     }
 
-    fn set_face_normal(&mut self, ray: &Ray, outward_normal: Vec3) {
+    pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: Vec3) {
         // Sets the hit record normal
         // Outward normal is assumed to be unit length
 
@@ -38,10 +42,13 @@ impl HitRecord {
 
 pub trait Hittable {
     fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<HitRecord>;
+
+    fn bounding_box(&self) -> &AABB;
 }
 
 pub struct HittableList<'a> {
     objects: Vec<Rc<dyn Hittable + 'a>>,
+    bounding_box: AABB,
 }
 
 #[allow(dead_code)]
@@ -49,6 +56,17 @@ impl<'a> HittableList<'a> {
     pub fn new() -> Self {
         Self {
             objects: Vec::new(),
+            bounding_box: AABB::empty(),
+        }
+    }
+
+    pub fn from_object(object: Rc<dyn Hittable + 'a>) -> Self {
+        let mut objects = Vec::new();
+        objects.push(object);
+
+        Self {
+            objects,
+            bounding_box: AABB::empty(),
         }
     }
 
@@ -57,6 +75,7 @@ impl<'a> HittableList<'a> {
     }
 
     pub fn add(&mut self, object: Rc<dyn Hittable + 'a>) {
+        self.bounding_box = AABB::from_aabbs(&self.bounding_box, object.bounding_box());
         self.objects.push(object);
     }
 }
@@ -75,5 +94,9 @@ impl<'a> Hittable for HittableList<'a> {
         }
 
         hit_record
+    }
+
+    fn bounding_box(&self) -> &AABB {
+        &self.bounding_box
     }
 }

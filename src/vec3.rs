@@ -24,6 +24,14 @@ impl Vec3 {
         }
     }
 
+    pub fn up() -> Self {
+        Self {
+            x: 0.0,
+            y: 1.0,
+            z: 0.0,
+        }
+    }
+
     pub fn random() -> Self {
         let mut rng = rand::thread_rng();
         Self {
@@ -88,6 +96,16 @@ impl Vec3 {
 }
 
 impl Vec3 {
+    pub fn get(&self, n: usize) -> f64 {
+        if n == 0 {
+            self.x
+        } else if n == 1 {
+            self.y
+        } else {
+            self.z
+        }
+    }
+
     pub fn length_squared(&self) -> f64 {
         self.x * self.x + self.y * self.y + self.z * self.z
     }

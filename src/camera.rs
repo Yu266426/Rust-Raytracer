@@ -43,7 +43,7 @@ impl Camera {
             vfov: 90.0,
             center: Vec3::zero(),
             look_at: Vec3::new(0.0, 0.0, -1.0),
-            v_up: Vec3::new(0.0, 1.0, 0.0),
+            v_up: Vec3::up(),
             defocus_angle: 0.0,
             focus_dist: 10.0,
             defocus_disk_u: Vec3::zero(),
@@ -156,8 +156,9 @@ impl Camera {
         };
 
         let ray_direction = pixel_sample_pos - ray_origin;
+        let ray_time = self.rng.borrow_mut().gen();
 
-        Ray::new(ray_origin, ray_direction)
+        Ray::new(ray_origin, ray_direction, ray_time)
     }
 
     fn sample_square(&self) -> Vec3 {

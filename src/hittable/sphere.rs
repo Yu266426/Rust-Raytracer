@@ -1,28 +1,48 @@
 use std::rc::Rc;
 
-use crate::{interval::Interval, material::Material, vec3::Vec3};
+use crate::{interval::Interval, material::Material, ray::Ray, vec3::Vec3};
 
-use super::{HitRecord, Hittable};
+use super::{aabb::AABB, HitRecord, Hittable};
 
 pub struct Sphere {
-    center: Vec3,
+    center: Ray,
     radius: f64,
     material: Rc<dyn Material>,
+    bounding_box: AABB,
 }
 
 impl Sphere {
-    pub fn new(center: Vec3, radius: f64, material: Rc<dyn Material>) -> Self {
+    pub fn still(center: Vec3, radius: f64, material: Rc<dyn Material>) -> Self {
+        let r_vec = Vec3::new(radius, radius, radius);
+
         Self {
-            center,
+            center: Ray::new(center, Vec3::zero(), 0.0),
             radius: radius.max(0.0),
             material,
+            bounding_box: AABB::from_corners(center - r_vec, center + r_vec),
+        }
+    }
+
+    pub fn moving(start: Vec3, end: Vec3, radius: f64, material: Rc<dyn Material>) -> Self {
+        let r_vec = Vec3::new(radius, radius, radius);
+
+        let box_1 = AABB::from_corners(start - r_vec, start + r_vec);
+        let box_2 = AABB::from_corners(end - r_vec, end + r_vec);
+
+        Self {
+            center: Ray::new(start, end - start, 0.0),
+            radius,
+            material,
+            bounding_box: AABB::from_aabbs(&box_1, &box_2),
         }
     }
 }
 
 impl Hittable for Sphere {
-    fn hit(&self, ray: &crate::ray::Ray, ray_t: Interval) -> Option<HitRecord> {
-        let oc = self.center - ray.origin;
+    fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<HitRecord> {
+        let center = self.center.at(ray.time);
+
+        let oc = center - ray.origin;
 
         // Quadratic formula for ray sphere intersection
         let a = ray.direction.length_squared();
@@ -48,8 +68,12 @@ impl Hittable for Sphere {
         }
 
         let mut hit_record = HitRecord::new(ray, root, Rc::clone(&self.material));
-        hit_record.set_face_normal(ray, (hit_record.point - self.center) / self.radius);
+        hit_record.set_face_normal(ray, (hit_record.point - center) / self.radius);
 
         Some(hit_record)
+    }
+
+    fn bounding_box(&self) -> &AABB {
+        &self.bounding_box
     }
 }
