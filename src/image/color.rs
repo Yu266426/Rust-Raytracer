@@ -2,7 +2,7 @@ use std::ops::{Add, AddAssign, Mul};
 
 use crate::interval::Interval;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct Color {
     pub r: f64,
     pub g: f64,

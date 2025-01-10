@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{f64::consts::PI, rc::Rc};
 
 use crate::{interval::Interval, material::Material, ray::Ray, vec3::Vec3};
 
@@ -36,6 +36,13 @@ impl Sphere {
             bounding_box: AABB::from_aabbs(&box_1, &box_2),
         }
     }
+
+    fn get_sphere_uv(normal: &Vec3) -> (f64, f64) {
+        let theta = (-normal.y).acos();
+        let phi = (-normal.z).atan2(normal.x) + PI;
+
+        (phi / (2.0 * PI), theta / PI)
+    }
 }
 
 impl Hittable for Sphere {
@@ -67,8 +74,12 @@ impl Hittable for Sphere {
             }
         }
 
-        let mut hit_record = HitRecord::new(ray, root, Rc::clone(&self.material));
-        hit_record.set_face_normal(ray, (hit_record.point - center) / self.radius);
+        let hit_pos = ray.at(root);
+        let outward_normal = (hit_pos - center) / self.radius;
+
+        let uv = Self::get_sphere_uv(&outward_normal);
+        let mut hit_record = HitRecord::new(hit_pos, root, Rc::clone(&self.material), uv);
+        hit_record.set_face_normal(ray, (hit_record.pos - center) / self.radius);
 
         Some(hit_record)
     }

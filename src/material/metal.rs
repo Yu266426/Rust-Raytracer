@@ -14,13 +14,16 @@ impl Metal {
 }
 
 impl Material for Metal {
-    fn scatter(&self, ray: &Ray, hit_record: &HitRecord) -> Option<(&Color, Ray)> {
+    fn scatter(&self, ray: &Ray, hit_record: &HitRecord) -> Option<(Color, Ray)> {
         let mut reflected = ray.direction.reflected(&hit_record.normal);
 
         reflected = reflected.normalize() + (self.roughness * Vec3::random_unit());
 
         if reflected.dot(&hit_record.normal) > 0.0 {
-            Some((&self.albedo, Ray::new(hit_record.point, reflected, ray.time)))
+            Some((
+                self.albedo.clone(),
+                Ray::new(hit_record.pos, reflected, ray.time),
+            ))
         } else {
             None
         }

@@ -9,20 +9,24 @@ use aabb::AABB;
 use crate::{interval::Interval, material::Material, ray::Ray, vec3::Vec3};
 
 pub struct HitRecord {
-    pub point: Vec3,
+    pub pos: Vec3,
     pub normal: Vec3,
     pub material: Rc<dyn Material>,
     pub t: f64,
+    pub u: f64,
+    pub v: f64,
     pub front_face: bool,
 }
 
 impl HitRecord {
-    pub fn new(ray: &Ray, t: f64, material: Rc<dyn Material>) -> Self {
+    pub fn new(pos: Vec3, t: f64, material: Rc<dyn Material>, uv: (f64, f64)) -> Self {
         Self {
-            point: ray.at(t),
+            pos,
             normal: Vec3::zero(),
             material,
             t,
+            u: uv.0,
+            v: uv.1,
             front_face: false,
         }
     }

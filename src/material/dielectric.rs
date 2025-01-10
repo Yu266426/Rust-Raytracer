@@ -26,7 +26,7 @@ impl Dielectric {
 }
 
 impl Material for Dielectric {
-    fn scatter(&self, ray: &Ray, hit_record: &HitRecord) -> Option<(&Color, Ray)> {
+    fn scatter(&self, ray: &Ray, hit_record: &HitRecord) -> Option<(Color, Ray)> {
         let refraction_index = if hit_record.front_face {
             1.0 / self.refraction_index
         } else {
@@ -48,6 +48,9 @@ impl Material for Dielectric {
                 .refracted(&hit_record.normal, refraction_index);
         }
 
-        Some((&self.albedo, Ray::new(hit_record.point, direction, ray.time)))
+        Some((
+            self.albedo.clone(),
+            Ray::new(hit_record.pos, direction, ray.time),
+        ))
     }
 }

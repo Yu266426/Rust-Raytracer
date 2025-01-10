@@ -1,19 +1,33 @@
-use crate::{hittable::HitRecord, image::color::Color, ray::Ray, vec3::Vec3};
+use std::rc::Rc;
+
+use crate::{
+    hittable::HitRecord,
+    image::color::Color,
+    ray::Ray,
+    texture::{solid_color::SolidColor, Texture},
+    vec3::Vec3,
+};
 
 use super::Material;
 
 pub struct Lambertian {
-    pub(super) albedo: Color,
+    texture: Rc<dyn Texture>,
 }
 
 impl Lambertian {
-    pub fn new(albedo: Color) -> Self {
-        Self { albedo }
+    pub fn new(texture: Rc<dyn Texture>) -> Self {
+        Self { texture }
+    }
+
+    pub fn from_color(albedo: Color) -> Self {
+        Self {
+            texture: Rc::new(SolidColor::new(albedo)),
+        }
     }
 }
 
 impl Material for Lambertian {
-    fn scatter(&self, ray: &Ray, hit_record: &HitRecord) -> Option<(&Color, Ray)> {
+    fn scatter(&self, ray: &Ray, hit_record: &HitRecord) -> Option<(Color, Ray)> {
         let mut scatter_direction = hit_record.normal + Vec3::random_unit();
 
         if scatter_direction.near_zero() {
@@ -21,8 +35,9 @@ impl Material for Lambertian {
         }
 
         Some((
-            &self.albedo,
-            Ray::new(hit_record.point, scatter_direction, ray.time),
+            self.texture
+                .value(hit_record.u, hit_record.v, &hit_record.pos),
+            Ray::new(hit_record.pos, scatter_direction, ray.time),
         ))
     }
 }

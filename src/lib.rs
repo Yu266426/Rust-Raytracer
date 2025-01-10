@@ -4,4 +4,6 @@ pub mod image;
 pub mod interval;
 pub mod material;
 pub mod ray;
+pub mod texture;
 pub mod vec3;
+pub mod perlin;
