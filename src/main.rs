@@ -3,7 +3,7 @@ use std::{rc::Rc, time::Instant};
 use rand::{thread_rng, Rng};
 use raytracer::{
     camera::Camera,
-    hittable::{bvh::BVHNode, sphere::Sphere, HittableList},
+    hittable::{bvh::BVHNode, quad::Quad, sphere::Sphere, HittableList},
     image::color::Color,
     material::{dielectric::Dielectric, lambertian::Lambertian, metal::Metal, Material},
     texture::{
@@ -287,12 +287,74 @@ fn perlin_spheres<'a>() -> (HittableList<'a>, Camera) {
     )
 }
 
+#[allow(dead_code)]
+fn quads<'a>() -> (HittableList<'a>, Camera) {
+    let mut world = HittableList::new();
+
+    let left_red: Rc<dyn Material> = Rc::new(Lambertian::from_color(Color::new(1.0, 0.2, 0.2)));
+    let back_green: Rc<dyn Material> = Rc::new(Lambertian::from_color(Color::new(0.2, 1.0, 0.2)));
+    let right_blue: Rc<dyn Material> = Rc::new(Lambertian::from_color(Color::new(0.2, 0.2, 1.0)));
+    let upper_orange: Rc<dyn Material> = Rc::new(Lambertian::from_color(Color::new(1.0, 0.5, 0.0)));
+    let lower_teal: Rc<dyn Material> = Rc::new(Lambertian::from_color(Color::new(0.2, 0.8, 0.8)));
+
+    world.add(Rc::new(Quad::new(
+        Vec3::new(-3.0, -2.0, 5.0),
+        Vec3::new(0.0, 0.0, -4.0),
+        Vec3::new(0.0, 4.0, 0.0),
+        Rc::clone(&left_red),
+    )));
+
+    world.add(Rc::new(Quad::new(
+        Vec3::new(-2.0, -2.0, 0.0),
+        Vec3::new(4.0, 0.0, 0.0),
+        Vec3::new(0.0, 4.0, 0.0),
+        Rc::clone(&back_green),
+    )));
+
+    world.add(Rc::new(Quad::new(
+        Vec3::new(3.0, -2.0, 1.0),
+        Vec3::new(0.0, 0.0, 4.0),
+        Vec3::new(0.0, 4.0, 0.0),
+        Rc::clone(&right_blue),
+    )));
+
+    world.add(Rc::new(Quad::new(
+        Vec3::new(-2.0, 3.0, 1.0),
+        Vec3::new(4.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 4.0),
+        Rc::clone(&upper_orange),
+    )));
+
+    world.add(Rc::new(Quad::new(
+        Vec3::new(-2.0, -3.0, 5.0),
+        Vec3::new(4.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, -4.0),
+        Rc::clone(&lower_teal),
+    )));
+
+    (
+        world,
+        Camera::new(
+            ASPECT_RATIO,
+            IMAGE_WIDTH,
+            80.0,
+            Vec3::new(0.0, 0.0, 9.0),
+            Vec3::new(0.0, 0.0, 0.0),
+            0.0,
+            1.0,
+            SAMPLES_PER_PIXEL,
+            MAX_DEPTH,
+        ),
+    )
+}
+
 fn main() {
-    let (world, camera) = match 4 {
+    let (world, camera) = match 5 {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
         3 => earth(),
         4 => perlin_spheres(),
+        5 => quads(),
         _ => todo!(),
     };
 

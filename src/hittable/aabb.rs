@@ -22,7 +22,11 @@ impl AABB {
     }
 
     pub fn new(x: Interval, y: Interval, z: Interval) -> Self {
-        Self { x, y, z }
+        let mut aabb = Self { x, y, z };
+
+        Self::pad_to_minimums(&mut aabb);
+
+        aabb
     }
 
     pub fn from_corners(a: Vec3, b: Vec3) -> Self {
@@ -116,5 +120,19 @@ impl AABB {
         }
 
         true
+    }
+
+    fn pad_to_minimums(aabb: &mut Self) {
+        let delta = 0.0001;
+
+        if aabb.x.size() < delta {
+            aabb.x = aabb.x.expand(delta)
+        }
+        if aabb.y.size() < delta {
+            aabb.y = aabb.y.expand(delta);
+        }
+        if aabb.z.size() < delta {
+            aabb.z = aabb.z.expand(delta);
+        }
     }
 }

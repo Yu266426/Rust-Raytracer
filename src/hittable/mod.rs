@@ -1,6 +1,7 @@
 mod aabb;
 pub mod bvh;
 pub mod sphere;
+pub mod quad;
 
 use std::rc::Rc;
 
