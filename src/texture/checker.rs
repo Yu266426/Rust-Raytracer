@@ -29,15 +29,15 @@ impl CheckerTexture {
 }
 
 impl Texture for CheckerTexture {
-    fn value(&self, u: f64, v: f64, pos: &Vec3) -> Color {
+    fn value(&self, uv: (f64, f64), pos: &Vec3) -> Color {
         let x = (self.inv_scale * pos.x).floor() as i32;
         let y = (self.inv_scale * pos.y).floor() as i32;
         let z = (self.inv_scale * pos.z).floor() as i32;
 
         if (x + y + z) % 2 == 0 {
-            self.even.value(u, v, pos)
+            self.even.value(uv, pos)
         } else {
-            self.odd.value(u, v, pos)
+            self.odd.value(uv, pos)
         }
     }
 }

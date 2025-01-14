@@ -49,9 +49,13 @@ impl Quad {
             return false;
         }
 
-        hit_record.u = a;
-        hit_record.v = b;
-        return true;
+        // Commented out is implementation for triangles
+        // if a <= 0.0 || b <= 0.0 || a + b >= 1.0 {
+        //     return false;
+        // }
+
+        hit_record.uv = (a, b);
+        true
     }
 }
 

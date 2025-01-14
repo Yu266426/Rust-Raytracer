@@ -19,7 +19,7 @@ impl SolidColor {
 }
 
 impl Texture for SolidColor {
-    fn value(&self, _u: f64, _v: f64, _pos: &crate::vec3::Vec3) -> Color {
+    fn value(&self, _uv: (f64, f64), _pos: &crate::vec3::Vec3) -> Color {
         self.albedo.clone()
     }
 }

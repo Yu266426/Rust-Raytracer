@@ -28,6 +28,7 @@ pub struct Camera {
     top_left_pixel_pos: Vec3,
     pixel_delta_u: Vec3,
     pixel_delta_v: Vec3,
+    background: Color,
     pub samples_per_pixel: usize,
     pub pixel_samples_scale: f64,
     pub max_depth: usize,
@@ -51,6 +52,7 @@ impl Camera {
             top_left_pixel_pos: Vec3::zero(),
             pixel_delta_u: Vec3::zero(),
             pixel_delta_v: Vec3::zero(),
+            background: Color::black(),
             samples_per_pixel: 10,
             pixel_samples_scale: 0.0,
             max_depth: 10,
@@ -66,6 +68,7 @@ impl Camera {
         look_at: Vec3,
         defocus_angle: f64,
         focus_dist: f64,
+        background: Color,
         samples_per_pixel: usize,
         max_depth: usize,
     ) -> Self {
@@ -78,6 +81,7 @@ impl Camera {
         camera.look_at = look_at;
         camera.defocus_angle = defocus_angle;
         camera.focus_dist = focus_dist;
+        camera.background = background;
         camera.samples_per_pixel = samples_per_pixel;
         camera.max_depth = max_depth;
 
@@ -130,7 +134,7 @@ impl Camera {
 
                 for _ in 0..self.samples_per_pixel {
                     let ray = self.get_ray(col, row);
-                    color += Self::ray_color(&ray, self.max_depth, world);
+                    color += self.ray_color(&ray, self.max_depth, world);
                 }
 
                 image.set_pixel(color * self.pixel_samples_scale, row, col);
@@ -172,22 +176,28 @@ impl Camera {
         self.center + p.x * self.defocus_disk_u + p.y * self.defocus_disk_v
     }
 
-    fn ray_color(ray: &Ray, depth: usize, world: &impl Hittable) -> Color {
+    fn ray_color(&self, ray: &Ray, depth: usize, world: &impl Hittable) -> Color {
         if depth == 0 {
             return Color::black();
         }
 
+        // Hit something
         if let Some(hit_record) = world.hit(ray, Interval::new(0.001, f64::INFINITY)) {
+            let emission = hit_record.material.emitted(hit_record.uv, &hit_record.pos);
             if let Some((attenuation, scattered)) = hit_record.material.scatter(ray, &hit_record) {
-                return attenuation * Self::ray_color(&scattered, depth - 1, world);
+                return attenuation * self.ray_color(&scattered, depth - 1, world) + emission;
             } else {
-                return Color::black();
+                return emission;
             }
         }
 
+        // No hits on objects
+        /* Old sky code
         let unit_direction = ray.direction.normalize();
         let a = 0.5 * (unit_direction.y + 1.0);
 
-        (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
+        (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)\
+        */
+        self.background.clone()
     }
 }

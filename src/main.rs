@@ -5,7 +5,13 @@ use raytracer::{
     camera::Camera,
     hittable::{bvh::BVHNode, quad::Quad, sphere::Sphere, HittableList},
     image::color::Color,
-    material::{dielectric::Dielectric, lambertian::Lambertian, metal::Metal, Material},
+    material::{
+        dielectric::Dielectric,
+        diffuse_light::{self, DiffuseLight},
+        lambertian::Lambertian,
+        metal::Metal,
+        Material,
+    },
     texture::{
         checker::CheckerTexture, image_texture::ImageTexture, noise_texture::NoiseTexture, Texture,
     },
@@ -15,6 +21,11 @@ use raytracer::{
 const ASPECT_RATIO: f64 = 16.0 / 9.0;
 const IMAGE_WIDTH: usize = 400;
 const VFOV: f64 = 20.0;
+const SKY_COLOUR: Color = Color {
+    r: 0.7,
+    g: 0.8,
+    b: 1.0,
+};
 const SAMPLES_PER_PIXEL: usize = 100;
 const MAX_DEPTH: usize = 50;
 
@@ -92,6 +103,7 @@ fn weekend_1<'a>() -> (HittableList<'a>, Camera) {
             Vec3::new(0.0, 0.0, 0.0),
             0.6,
             10.0,
+            SKY_COLOUR,
             500,
             50,
         ),
@@ -180,6 +192,7 @@ fn bouncing_spheres<'a>() -> (HittableList<'a>, Camera) {
             Vec3::new(0.0, 0.0, 0.0),
             0.6,
             10.0,
+            SKY_COLOUR,
             SAMPLES_PER_PIXEL,
             MAX_DEPTH,
         ),
@@ -218,6 +231,7 @@ fn checkered_spheres<'a>() -> (HittableList<'a>, Camera) {
             Vec3::new(0.0, 0.0, 0.0),
             0.0,
             1.0,
+            SKY_COLOUR,
             SAMPLES_PER_PIXEL,
             MAX_DEPTH,
         ),
@@ -247,6 +261,7 @@ fn earth<'a>() -> (HittableList<'a>, Camera) {
             Vec3::new(0.0, 0.0, 0.0),
             0.0,
             10.0,
+            SKY_COLOUR,
             SAMPLES_PER_PIXEL,
             MAX_DEPTH,
         ),
@@ -281,6 +296,7 @@ fn perlin_spheres<'a>() -> (HittableList<'a>, Camera) {
             Vec3::new(0.0, 0.0, 0.0),
             0.0,
             10.0,
+            SKY_COLOUR,
             SAMPLES_PER_PIXEL,
             MAX_DEPTH,
         ),
@@ -342,19 +358,140 @@ fn quads<'a>() -> (HittableList<'a>, Camera) {
             Vec3::new(0.0, 0.0, 0.0),
             0.0,
             1.0,
+            SKY_COLOUR,
             SAMPLES_PER_PIXEL,
             MAX_DEPTH,
         ),
     )
 }
 
+#[allow(dead_code)]
+fn simple_light<'a>() -> (HittableList<'a>, Camera) {
+    let mut world = HittableList::new();
+
+    let perlin_texture: Rc<dyn Texture> = Rc::new(NoiseTexture::new(4.0));
+
+    world.add(Rc::new(Sphere::still(
+        Vec3::new(0.0, -1000.0, 0.0),
+        1000.0,
+        Rc::new(Lambertian::new(Rc::clone(&perlin_texture))),
+    )));
+    world.add(Rc::new(Sphere::still(
+        Vec3::new(0.0, 2.0, 0.0),
+        2.0,
+        Rc::new(Lambertian::new(Rc::clone(&perlin_texture))),
+    )));
+
+    let diffuse_light: Rc<dyn Material> =
+        Rc::new(DiffuseLight::from_color(Color::new(4.0, 4.0, 4.0)));
+
+    world.add(Rc::new(Quad::new(
+        Vec3::new(3.0, 1.0, -2.0),
+        Vec3::new(2.0, 0.0, 0.0),
+        Vec3::new(0.0, 2.0, 0.0),
+        Rc::clone(&diffuse_light),
+    )));
+
+    world.add(Rc::new(Sphere::still(
+        Vec3::new(0.0, 7.0, 0.0),
+        2.0,
+        Rc::clone(&diffuse_light),
+    )));
+
+    (
+        world,
+        Camera::new(
+            ASPECT_RATIO,
+            IMAGE_WIDTH,
+            VFOV,
+            Vec3::new(26.0, 3.0, 6.0),
+            Vec3::new(0.0, 2.0, 0.0),
+            0.0,
+            1.0,
+            Color::new(0.0, 0.0, 0.0),
+            SAMPLES_PER_PIXEL,
+            MAX_DEPTH,
+        ),
+    )
+}
+
+#[allow(dead_code)]
+fn cornell_box<'a>() -> (HittableList<'a>, Camera) {
+    let mut world = HittableList::new();
+
+    let red: Rc<dyn Material> = Rc::new(Lambertian::from_color(Color::new(0.65, 0.05, 0.05)));
+    let white: Rc<dyn Material> = Rc::new(Lambertian::from_color(Color::new(0.73, 0.73, 0.73)));
+    let green: Rc<dyn Material> = Rc::new(Lambertian::from_color(Color::new(0.12, 0.45, 0.15)));
+    let light: Rc<dyn Material> = Rc::new(DiffuseLight::from_color(Color::new(15.0, 15.0, 15.0)));
+
+    world.add(Rc::new(Quad::new(
+        Vec3::new(555.0, 0.0, 0.0),
+        Vec3::new(0.0, 555.0, 0.0),
+        Vec3::new(0.0, 0.0, 555.0),
+        Rc::clone(&green),
+    )));
+
+    world.add(Rc::new(Quad::new(
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(0.0, 555.0, 0.0),
+        Vec3::new(0.0, 0.0, 555.0),
+        Rc::clone(&red),
+    )));
+
+    world.add(Rc::new(Quad::new(
+        Vec3::new(343.0, 554.0, 332.0),
+        Vec3::new(-130.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, -105.0),
+        Rc::clone(&light),
+    )));
+
+    world.add(Rc::new(Quad::new(
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(555.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 555.0),
+        Rc::clone(&white),
+    )));
+
+    world.add(Rc::new(Quad::new(
+        Vec3::new(555.0, 555.0, 555.0),
+        Vec3::new(-555.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, -555.0),
+        Rc::clone(&white),
+    )));
+
+    world.add(Rc::new(Quad::new(
+        Vec3::new(0.0, 0.0, 555.0),
+        Vec3::new(555.0, 0.0, 0.0),
+        Vec3::new(0.0, 555.0, 0.0),
+        Rc::clone(&white),
+    )));
+
+    (
+        world,
+        Camera::new(
+            1.0,
+            600,
+            40.0,
+            Vec3::new(278.0, 278.0, -800.0),
+            Vec3::new(278.0, 278.0, 0.0),
+            0.0,
+            1.0,
+            Color::new(0.0, 0.0, 0.0),
+            200,
+            50,
+        ),
+    )
+}
+
 fn main() {
-    let (world, camera) = match 5 {
+    let (world, camera) = match 7 {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
         3 => earth(),
         4 => perlin_spheres(),
         5 => quads(),
+        6 => simple_light(),
+        7 => cornell_box(),
         _ => todo!(),
     };
 

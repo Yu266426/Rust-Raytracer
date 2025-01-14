@@ -18,7 +18,7 @@ impl ImageTexture {
 }
 
 impl Texture for ImageTexture {
-    fn value(&self, u: f64, v: f64, _pos: &Vec3) -> Color {
+    fn value(&self, uv: (f64, f64), _pos: &Vec3) -> Color {
         // Debug color (cyan) if no image
         if self.image.height() <= 0 {
             return Color {
@@ -28,8 +28,8 @@ impl Texture for ImageTexture {
             };
         }
 
-        let u = u.clamp(0.0, 1.0);
-        let v = 1.0 - v.clamp(0.0, 1.0);
+        let u = uv.0.clamp(0.0, 1.0);
+        let v = 1.0 - uv.1.clamp(0.0, 1.0);
 
         let i = (u * self.image.width() as f64) as usize;
         let j = (v * self.image.height() as f64) as usize;

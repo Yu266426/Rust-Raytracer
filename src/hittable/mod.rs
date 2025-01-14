@@ -1,7 +1,7 @@
 mod aabb;
 pub mod bvh;
-pub mod sphere;
 pub mod quad;
+pub mod sphere;
 
 use std::rc::Rc;
 
@@ -14,8 +14,7 @@ pub struct HitRecord {
     pub normal: Vec3,
     pub material: Rc<dyn Material>,
     pub t: f64,
-    pub u: f64,
-    pub v: f64,
+    pub uv: (f64, f64),
     pub front_face: bool,
 }
 
@@ -26,8 +25,7 @@ impl HitRecord {
             normal: Vec3::zero(),
             material,
             t,
-            u: uv.0,
-            v: uv.1,
+            uv,
             front_face: false,
         }
     }

@@ -35,8 +35,7 @@ impl Material for Lambertian {
         }
 
         Some((
-            self.texture
-                .value(hit_record.u, hit_record.v, &hit_record.pos),
+            self.texture.value(hit_record.uv, &hit_record.pos),
             Ray::new(hit_record.pos, scatter_direction, ray.time),
         ))
     }
