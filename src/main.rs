@@ -19,7 +19,7 @@ const SAMPLES_PER_PIXEL: usize = 100;
 const MAX_DEPTH: usize = 50;
 
 #[allow(dead_code)]
-fn weekend_1<'a>() -> (HittableList<'a>, Camera) {
+fn weekend_1() -> (HittableList, Camera) {
     let mut world = HittableList::new();
 
     let material_ground = Rc::new(Material::lambertian_from_color(Color::new(0.5, 0.5, 0.5)));
@@ -100,7 +100,7 @@ fn weekend_1<'a>() -> (HittableList<'a>, Camera) {
 }
 
 #[allow(dead_code)]
-fn bouncing_spheres<'a>() -> (HittableList<'a>, Camera) {
+fn bouncing_spheres() -> (HittableList, Camera) {
     let mut world = HittableList::new();
 
     let material_ground = Rc::new(Material::lambertian_from_color(Color::new(0.5, 0.5, 0.5)));
@@ -189,7 +189,7 @@ fn bouncing_spheres<'a>() -> (HittableList<'a>, Camera) {
 }
 
 #[allow(dead_code)]
-fn checkered_spheres<'a>() -> (HittableList<'a>, Camera) {
+fn checkered_spheres() -> (HittableList, Camera) {
     let mut world = HittableList::new();
 
     let checker = Rc::new(TextureEnum::checker_from_colors(
@@ -230,7 +230,7 @@ fn checkered_spheres<'a>() -> (HittableList<'a>, Camera) {
 }
 
 #[allow(dead_code)]
-fn earth<'a>() -> (HittableList<'a>, Camera) {
+fn earth() -> (HittableList, Camera) {
     let mut world = HittableList::new();
 
     let earth_texture = Rc::new(TextureEnum::image("earthmap.jpg"));
@@ -260,7 +260,7 @@ fn earth<'a>() -> (HittableList<'a>, Camera) {
 }
 
 #[allow(dead_code)]
-fn perlin_spheres<'a>() -> (HittableList<'a>, Camera) {
+fn perlin_spheres() -> (HittableList, Camera) {
     let mut world = HittableList::new();
 
     let perlin_texture = Rc::new(TextureEnum::noise(4.0));
@@ -296,7 +296,7 @@ fn perlin_spheres<'a>() -> (HittableList<'a>, Camera) {
 }
 
 #[allow(dead_code)]
-fn quads<'a>() -> (HittableList<'a>, Camera) {
+fn quads() -> (HittableList, Camera) {
     let mut world = HittableList::new();
 
     let left_red = Rc::new(Material::lambertian_from_color(Color::new(1.0, 0.2, 0.2)));
@@ -358,7 +358,7 @@ fn quads<'a>() -> (HittableList<'a>, Camera) {
 }
 
 #[allow(dead_code)]
-fn simple_light<'a>() -> (HittableList<'a>, Camera) {
+fn simple_light() -> (HittableList, Camera) {
     let mut world = HittableList::new();
 
     let perlin_texture = Rc::new(TextureEnum::noise(4.0));
@@ -410,7 +410,7 @@ fn simple_light<'a>() -> (HittableList<'a>, Camera) {
 }
 
 #[allow(dead_code)]
-fn cornell_box<'a>() -> (HittableList<'a>, Camera) {
+fn cornell_box() -> (HittableList, Camera) {
     let mut world = HittableList::new();
 
     let red = Rc::new(Material::lambertian_from_color(Color::new(

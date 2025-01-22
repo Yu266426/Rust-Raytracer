@@ -4,14 +4,14 @@ use crate::{interval::Interval, ray::Ray};
 
 use super::{aabb::AABB, HitRecord, Hittable, HittableList};
 
-pub struct BVHNode<'a> {
-    left: Rc<dyn Hittable + 'a>,
-    right: Rc<dyn Hittable + 'a>,
+pub struct BVHNode {
+    left: Rc<dyn Hittable>,
+    right: Rc<dyn Hittable>,
     bounding_box: AABB,
 }
 
-impl<'a> BVHNode<'a> {
-    pub fn new(mut objects: Vec<Rc<dyn Hittable + 'a>>, start: usize, end: usize) -> Self {
+impl BVHNode {
+    pub fn new(mut objects: Vec<Rc<dyn Hittable>>, start: usize, end: usize) -> Self {
         let mut bounding_box = AABB::empty();
         for object in &objects[start..end] {
             bounding_box = AABB::from_aabbs(&bounding_box, object.bounding_box());
@@ -54,36 +54,32 @@ impl<'a> BVHNode<'a> {
         }
     }
 
-    pub fn from_hittable_list(list: HittableList<'a>) -> Self {
+    pub fn from_hittable_list(list: HittableList) -> Self {
         let num_objects = list.objects.len();
         Self::new(list.objects.clone(), 0, num_objects)
     }
 
-    fn box_compare(
-        a: &Rc<dyn Hittable + 'a>,
-        b: &Rc<dyn Hittable + 'a>,
-        axis_index: usize,
-    ) -> Ordering {
+    fn box_compare(a: &Rc<dyn Hittable>, b: &Rc<dyn Hittable>, axis_index: usize) -> Ordering {
         let a_axis_interval = a.bounding_box().axis_interval(axis_index);
         let b_axis_interval = b.bounding_box().axis_interval(axis_index);
 
         a_axis_interval.min.total_cmp(&b_axis_interval.min)
     }
 
-    fn box_x_compare(a: &Rc<dyn Hittable + 'a>, b: &Rc<dyn Hittable + 'a>) -> Ordering {
+    fn box_x_compare(a: &Rc<dyn Hittable>, b: &Rc<dyn Hittable>) -> Ordering {
         Self::box_compare(a, b, 0)
     }
 
-    fn box_y_compare(a: &Rc<dyn Hittable + 'a>, b: &Rc<dyn Hittable + 'a>) -> Ordering {
+    fn box_y_compare(a: &Rc<dyn Hittable>, b: &Rc<dyn Hittable>) -> Ordering {
         Self::box_compare(a, b, 1)
     }
 
-    fn box_z_compare(a: &Rc<dyn Hittable + 'a>, b: &Rc<dyn Hittable + 'a>) -> Ordering {
+    fn box_z_compare(a: &Rc<dyn Hittable>, b: &Rc<dyn Hittable>) -> Ordering {
         Self::box_compare(a, b, 2)
     }
 }
 
-impl<'a> Hittable for BVHNode<'a> {
+impl Hittable for BVHNode {
     fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<HitRecord> {
         if !self.bounding_box.hit(ray, ray_t.clone()) {
             return None;

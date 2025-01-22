@@ -49,13 +49,13 @@ pub trait Hittable {
     fn bounding_box(&self) -> &AABB;
 }
 
-pub struct HittableList<'a> {
-    objects: Vec<Rc<dyn Hittable + 'a>>,
+pub struct HittableList {
+    objects: Vec<Rc<dyn Hittable>>,
     bounding_box: AABB,
 }
 
 #[allow(dead_code)]
-impl<'a> HittableList<'a> {
+impl HittableList{
     pub fn new() -> Self {
         Self {
             objects: Vec::new(),
@@ -63,7 +63,7 @@ impl<'a> HittableList<'a> {
         }
     }
 
-    pub fn from_object(object: Rc<dyn Hittable + 'a>) -> Self {
+    pub fn from_object(object: Rc<dyn Hittable>) -> Self {
         let mut objects = Vec::new();
         objects.push(object);
 
@@ -77,13 +77,13 @@ impl<'a> HittableList<'a> {
         self.objects.clear();
     }
 
-    pub fn add(&mut self, object: Rc<dyn Hittable + 'a>) {
+    pub fn add(&mut self, object: Rc<dyn Hittable>) {
         self.bounding_box = AABB::from_aabbs(&self.bounding_box, object.bounding_box());
         self.objects.push(object);
     }
 }
 
-impl<'a> Hittable for HittableList<'a> {
+impl Hittable for HittableList {
     fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<HitRecord> {
         let mut hit_record = None;
 
