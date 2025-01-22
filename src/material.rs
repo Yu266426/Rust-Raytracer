@@ -2,13 +2,7 @@ use std::rc::Rc;
 
 use nanorand::{tls_rng, Rng};
 
-use crate::{
-    hittable::HitRecord,
-    image::color::Color,
-    ray::Ray,
-    texture::{solid_color::SolidColor, Texture},
-    vec3::Vec3,
-};
+use crate::{hittable::HitRecord, image::color::Color, ray::Ray, texture::TextureEnum, vec3::Vec3};
 
 pub enum Material {
     Dielectric {
@@ -17,10 +11,10 @@ pub enum Material {
         refraction_index: f64,
     },
     DiffuseLight {
-        texture: Rc<dyn Texture>,
+        texture: Rc<TextureEnum>,
     },
     Lambertian {
-        texture: Rc<dyn Texture>,
+        texture: Rc<TextureEnum>,
     },
     Metal {
         albedo: Color,
@@ -37,23 +31,23 @@ impl Material {
         }
     }
 
-    pub fn diffuse_light(texture: Rc<dyn Texture>) -> Self {
+    pub fn diffuse_light(texture: Rc<TextureEnum>) -> Self {
         Self::DiffuseLight { texture }
     }
 
     pub fn diffuse_light_from_color(albedo: Color) -> Self {
         Self::DiffuseLight {
-            texture: Rc::new(SolidColor::new(albedo)),
+            texture: Rc::new(TextureEnum::color(albedo)),
         }
     }
 
-    pub fn lambertian(texture: Rc<dyn Texture>) -> Self {
+    pub fn lambertian(texture: Rc<TextureEnum>) -> Self {
         Self::Lambertian { texture }
     }
 
     pub fn lambertian_from_color(albedo: Color) -> Self {
         Self::Lambertian {
-            texture: Rc::new(SolidColor::new(albedo)),
+            texture: Rc::new(TextureEnum::color(albedo)),
         }
     }
 
@@ -70,9 +64,7 @@ impl Material {
                 refraction_index,
             } => Self::dielectric_scatter(albedo, *refraction_index, ray, hit_record),
             Material::DiffuseLight { .. } => None,
-            Material::Lambertian { texture } => {
-                Self::lambertian_scatter(texture, ray, hit_record)
-            }
+            Material::Lambertian { texture } => Self::lambertian_scatter(texture, ray, hit_record),
             Material::Metal { albedo, roughness } => {
                 Self::metal_scatter(albedo, *roughness, ray, hit_record)
             }
@@ -123,7 +115,7 @@ impl Material {
     }
 
     fn lambertian_scatter(
-        texture: &Rc<dyn Texture>,
+        texture: &Rc<TextureEnum>,
         ray: &Ray,
         hit_record: &HitRecord,
     ) -> Option<(Color, Ray)> {

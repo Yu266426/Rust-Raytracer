@@ -7,20 +7,14 @@ use raytracer::{
     image::color::Color,
     material::Material,
     random::gen_range_f64,
-    texture::{
-        checker::CheckerTexture, image_texture::ImageTexture, noise_texture::NoiseTexture, Texture,
-    },
+    texture::TextureEnum,
     vec3::Vec3,
 };
 
 const ASPECT_RATIO: f64 = 16.0 / 9.0;
 const IMAGE_WIDTH: usize = 400;
 const VFOV: f64 = 20.0;
-const SKY_COLOUR: Color = Color {
-    r: 0.7,
-    g: 0.8,
-    b: 1.0,
-};
+const SKY_COLOUR: Color = Color::new(0.7, 0.8, 1.0);
 const SAMPLES_PER_PIXEL: usize = 100;
 const MAX_DEPTH: usize = 50;
 
@@ -198,7 +192,7 @@ fn bouncing_spheres<'a>() -> (HittableList<'a>, Camera) {
 fn checkered_spheres<'a>() -> (HittableList<'a>, Camera) {
     let mut world = HittableList::new();
 
-    let checker: Rc<dyn Texture> = Rc::new(CheckerTexture::from_colors(
+    let checker = Rc::new(TextureEnum::checker_from_colors(
         0.32,
         Color::new(0.2, 0.3, 0.1),
         Color::new(0.9, 0.9, 0.9),
@@ -239,7 +233,7 @@ fn checkered_spheres<'a>() -> (HittableList<'a>, Camera) {
 fn earth<'a>() -> (HittableList<'a>, Camera) {
     let mut world = HittableList::new();
 
-    let earth_texture: Rc<dyn Texture> = Rc::new(ImageTexture::new("earthmap.jpg"));
+    let earth_texture = Rc::new(TextureEnum::image("earthmap.jpg"));
     let earth_surface = Rc::new(Material::lambertian(Rc::clone(&earth_texture)));
 
     world.add(Rc::new(Sphere::still(
@@ -269,7 +263,7 @@ fn earth<'a>() -> (HittableList<'a>, Camera) {
 fn perlin_spheres<'a>() -> (HittableList<'a>, Camera) {
     let mut world = HittableList::new();
 
-    let perlin_texture: Rc<dyn Texture> = Rc::new(NoiseTexture::new(4.0));
+    let perlin_texture = Rc::new(TextureEnum::noise(4.0));
     let perlin_mat = Rc::new(Material::lambertian(Rc::clone(&perlin_texture)));
 
     world.add(Rc::new(Sphere::still(
@@ -367,7 +361,7 @@ fn quads<'a>() -> (HittableList<'a>, Camera) {
 fn simple_light<'a>() -> (HittableList<'a>, Camera) {
     let mut world = HittableList::new();
 
-    let perlin_texture: Rc<dyn Texture> = Rc::new(NoiseTexture::new(4.0));
+    let perlin_texture = Rc::new(TextureEnum::noise(4.0));
     let perlin_mat = Rc::new(Material::lambertian(Rc::clone(&perlin_texture)));
 
     world.add(Rc::new(Sphere::still(
@@ -492,7 +486,7 @@ fn cornell_box<'a>() -> (HittableList<'a>, Camera) {
 }
 
 fn main() {
-    let (world, camera) = match 1 {
+    let (world, camera) = match 4 {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
         3 => earth(),
