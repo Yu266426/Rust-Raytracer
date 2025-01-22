@@ -1,4 +1,4 @@
-use rand::{thread_rng, Rng};
+use nanorand::{tls_rng, Rng};
 
 use crate::vec3::Vec3;
 
@@ -32,10 +32,10 @@ impl Perlin {
     }
 
     fn permute(perm: &mut [usize], n: usize) {
-        let mut rng = thread_rng();
+        let mut rng = tls_rng();
 
         for i in (1..(n - 1)).rev() {
-            let target = rng.gen_range(0..i);
+            let target = rng.generate_range(0..i);
 
             let temp = perm[i];
             perm[i] = perm[target];

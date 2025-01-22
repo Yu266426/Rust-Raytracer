@@ -1,8 +1,8 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub};
 
-use rand::{thread_rng, Rng};
+use nanorand::{tls_rng, Rng};
 
-use crate::image::color::Color;
+use crate::{image::color::Color, random::gen_range_f64};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Vec3 {
@@ -33,20 +33,19 @@ impl Vec3 {
     }
 
     pub fn random() -> Self {
-        let mut rng = rand::thread_rng();
+        let mut rng = tls_rng();
         Self {
-            x: rng.gen(),
-            y: rng.gen(),
-            z: rng.gen(),
+            x: rng.generate(),
+            y: rng.generate(),
+            z: rng.generate(),
         }
     }
 
     pub fn random_range(min: f64, max: f64) -> Self {
-        let mut rng = rand::thread_rng();
         Self {
-            x: rng.gen_range(min..max),
-            y: rng.gen_range(min..max),
-            z: rng.gen_range(min..max),
+            x: gen_range_f64(min, max),
+            y: gen_range_f64(min, max),
+            z: gen_range_f64(min, max),
         }
     }
 
@@ -75,10 +74,8 @@ impl Vec3 {
 
     pub fn random_in_unit_disk() -> Self {
         // Only return vectors (normalized) within a unit disk
-        let mut rng = thread_rng();
-
         loop {
-            let p = Self::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0), 0.0);
+            let p = Self::new(gen_range_f64(-1.0, 1.0), gen_range_f64(-1.0, 1.0), 0.0);
 
             if p.length_squared() < 1.0 {
                 return p;

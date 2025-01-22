@@ -1,3 +1,5 @@
+use nanorand::{tls_rng, Rng};
+
 use crate::{hittable::HitRecord, image::color::Color, ray::Ray, vec3::Vec3};
 
 use super::Material;
@@ -40,7 +42,7 @@ impl Material for Dielectric {
         let cannot_refract = refraction_index * sin > 1.0;
 
         let direction: Vec3;
-        if cannot_refract || Self::reflectance(cos, refraction_index) > rand::random() {
+        if cannot_refract || Self::reflectance(cos, refraction_index) > tls_rng().generate() {
             direction = unit_direction.reflected(&hit_record.normal);
         } else {
             direction = unit_direction

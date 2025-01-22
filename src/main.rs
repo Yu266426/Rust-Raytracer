@@ -1,17 +1,15 @@
 use std::{rc::Rc, time::Instant};
 
-use rand::{thread_rng, Rng};
+use nanorand::{tls_rng, Rng};
 use raytracer::{
     camera::Camera,
     hittable::{bvh::BVHNode, quad::Quad, sphere::Sphere, HittableList},
     image::color::Color,
     material::{
-        dielectric::Dielectric,
-        diffuse_light::{self, DiffuseLight},
-        lambertian::Lambertian,
-        metal::Metal,
+        dielectric::Dielectric, diffuse_light::DiffuseLight, lambertian::Lambertian, metal::Metal,
         Material,
     },
+    random::gen_range_f64,
     texture::{
         checker::CheckerTexture, image_texture::ImageTexture, noise_texture::NoiseTexture, Texture,
     },
@@ -41,14 +39,14 @@ fn weekend_1<'a>() -> (HittableList<'a>, Camera) {
         Rc::clone(&material_ground),
     )));
 
-    let mut rng = thread_rng();
+    let mut rng = tls_rng();
     for a in -11..11 {
         for b in -11..11 {
-            let choose_mat: f64 = rng.gen();
+            let choose_mat: f64 = rng.generate();
             let center = Vec3::new(
-                a as f64 + 0.9 * rng.gen::<f64>(),
+                a as f64 + 0.9 * rng.generate::<f64>(),
                 0.2,
-                b as f64 + 0.9 * rng.gen::<f64>(),
+                b as f64 + 0.9 * rng.generate::<f64>(),
             );
 
             if (center - Vec3::new(4.0, 0.2, 0.0)).length() > 0.9 {
@@ -59,7 +57,7 @@ fn weekend_1<'a>() -> (HittableList<'a>, Camera) {
                     sphere_material = Rc::new(Lambertian::from_color(albedo));
                 } else if choose_mat < 0.95 {
                     let albedo = Vec3::random_range(0.5, 1.0).to_color();
-                    let fuzz = rng.gen_range(0.0..0.5);
+                    let fuzz = gen_range_f64(0.0, 0.5);
                     sphere_material = Rc::new(Metal::new(albedo, fuzz));
                 } else {
                     sphere_material = Rc::new(Dielectric::new(1.50));
@@ -122,14 +120,14 @@ fn bouncing_spheres<'a>() -> (HittableList<'a>, Camera) {
         Rc::clone(&material_ground),
     )));
 
-    let mut rng = thread_rng();
+    let mut rng = tls_rng();
     for a in -11..11 {
         for b in -11..11 {
-            let choose_mat: f64 = rng.gen();
+            let choose_mat: f64 = rng.generate();
             let center = Vec3::new(
-                a as f64 + 0.9 * rng.gen::<f64>(),
+                a as f64 + 0.9 * rng.generate::<f64>(),
                 0.2,
-                b as f64 + 0.9 * rng.gen::<f64>(),
+                b as f64 + 0.9 * rng.generate::<f64>(),
             );
 
             if (center - Vec3::new(4.0, 0.2, 0.0)).length() > 0.9 {
@@ -141,14 +139,14 @@ fn bouncing_spheres<'a>() -> (HittableList<'a>, Camera) {
 
                     world.add(Rc::new(Sphere::moving(
                         center,
-                        center + Vec3::new(0.0, rng.gen_range(0.0..0.5), 0.0),
+                        center + Vec3::new(0.0, gen_range_f64(0.0, 0.5), 0.0),
                         0.2,
                         sphere_material,
                     )));
                     continue;
                 } else if choose_mat < 0.95 {
                     let albedo = Vec3::random_range(0.5, 1.0).to_color();
-                    let fuzz = rng.gen_range(0.0..0.5);
+                    let fuzz = gen_range_f64(0.0, 0.5);
                     sphere_material = Rc::new(Metal::new(albedo, fuzz));
                 } else {
                     sphere_material = Rc::new(Dielectric::new(1.50));
@@ -484,7 +482,7 @@ fn cornell_box<'a>() -> (HittableList<'a>, Camera) {
 }
 
 fn main() {
-    let (world, camera) = match 7 {
+    let (world, camera) = match 1 {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
         3 => earth(),
