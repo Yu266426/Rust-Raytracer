@@ -5,10 +5,7 @@ use raytracer::{
     camera::Camera,
     hittable::{bvh::BVHNode, quad::Quad, sphere::Sphere, HittableList},
     image::color::Color,
-    material::{
-        dielectric::Dielectric, diffuse_light::DiffuseLight, lambertian::Lambertian, metal::Metal,
-        Material,
-    },
+    material::Material,
     random::gen_range_f64,
     texture::{
         checker::CheckerTexture, image_texture::ImageTexture, noise_texture::NoiseTexture, Texture,
@@ -31,8 +28,8 @@ const MAX_DEPTH: usize = 50;
 fn weekend_1<'a>() -> (HittableList<'a>, Camera) {
     let mut world = HittableList::new();
 
-    let material_ground: Rc<dyn Material> =
-        Rc::new(Lambertian::from_color(Color::new(0.5, 0.5, 0.5)));
+    let material_ground = Rc::new(Material::lambertian_from_color(Color::new(0.5, 0.5, 0.5)));
+
     world.add(Rc::new(Sphere::still(
         Vec3::new(0.0, -1000.0, -0.0),
         1000.0,
@@ -50,17 +47,17 @@ fn weekend_1<'a>() -> (HittableList<'a>, Camera) {
             );
 
             if (center - Vec3::new(4.0, 0.2, 0.0)).length() > 0.9 {
-                let sphere_material: Rc<dyn Material>;
+                let sphere_material;
 
                 if choose_mat < 0.8 {
                     let albedo = (Vec3::random() * Vec3::random()).to_color();
-                    sphere_material = Rc::new(Lambertian::from_color(albedo));
+                    sphere_material = Rc::new(Material::lambertian_from_color(albedo));
                 } else if choose_mat < 0.95 {
                     let albedo = Vec3::random_range(0.5, 1.0).to_color();
                     let fuzz = gen_range_f64(0.0, 0.5);
-                    sphere_material = Rc::new(Metal::new(albedo, fuzz));
+                    sphere_material = Rc::new(Material::metal(albedo, fuzz));
                 } else {
-                    sphere_material = Rc::new(Dielectric::new(1.50));
+                    sphere_material = Rc::new(Material::dielectric(1.50));
                 }
 
                 world.add(Rc::new(Sphere::still(center, 0.2, sphere_material)));
@@ -68,21 +65,21 @@ fn weekend_1<'a>() -> (HittableList<'a>, Camera) {
         }
     }
 
-    let material_1: Rc<dyn Material> = Rc::new(Dielectric::new(1.50));
+    let material_1 = Rc::new(Material::dielectric(1.50));
     world.add(Rc::new(Sphere::still(
         Vec3::new(0.0, 1.0, 0.0),
         1.0,
         material_1,
     )));
 
-    let material_2: Rc<dyn Material> = Rc::new(Lambertian::from_color(Color::new(0.4, 0.2, 0.1)));
+    let material_2 = Rc::new(Material::lambertian_from_color(Color::new(0.4, 0.2, 0.1)));
     world.add(Rc::new(Sphere::still(
         Vec3::new(-4.0, 1.0, 0.0),
         1.0,
         material_2,
     )));
 
-    let material_3: Rc<dyn Material> = Rc::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
+    let material_3 = Rc::new(Material::metal(Color::new(0.7, 0.6, 0.5), 0.0));
     world.add(Rc::new(Sphere::still(
         Vec3::new(4.0, 1.0, 0.0),
         1.0,
@@ -112,8 +109,8 @@ fn weekend_1<'a>() -> (HittableList<'a>, Camera) {
 fn bouncing_spheres<'a>() -> (HittableList<'a>, Camera) {
     let mut world = HittableList::new();
 
-    let material_ground: Rc<dyn Material> =
-        Rc::new(Lambertian::from_color(Color::new(0.5, 0.5, 0.5)));
+    let material_ground = Rc::new(Material::lambertian_from_color(Color::new(0.5, 0.5, 0.5)));
+
     world.add(Rc::new(Sphere::still(
         Vec3::new(0.0, -1000.0, -0.0),
         1000.0,
@@ -131,11 +128,11 @@ fn bouncing_spheres<'a>() -> (HittableList<'a>, Camera) {
             );
 
             if (center - Vec3::new(4.0, 0.2, 0.0)).length() > 0.9 {
-                let sphere_material: Rc<dyn Material>;
+                let sphere_material;
 
                 if choose_mat < 0.8 {
                     let albedo = (Vec3::random() * Vec3::random()).to_color();
-                    sphere_material = Rc::new(Lambertian::from_color(albedo));
+                    sphere_material = Rc::new(Material::lambertian_from_color(albedo));
 
                     world.add(Rc::new(Sphere::moving(
                         center,
@@ -147,9 +144,9 @@ fn bouncing_spheres<'a>() -> (HittableList<'a>, Camera) {
                 } else if choose_mat < 0.95 {
                     let albedo = Vec3::random_range(0.5, 1.0).to_color();
                     let fuzz = gen_range_f64(0.0, 0.5);
-                    sphere_material = Rc::new(Metal::new(albedo, fuzz));
+                    sphere_material = Rc::new(Material::metal(albedo, fuzz));
                 } else {
-                    sphere_material = Rc::new(Dielectric::new(1.50));
+                    sphere_material = Rc::new(Material::dielectric(1.50));
                 }
 
                 world.add(Rc::new(Sphere::still(center, 0.2, sphere_material)));
@@ -157,21 +154,21 @@ fn bouncing_spheres<'a>() -> (HittableList<'a>, Camera) {
         }
     }
 
-    let material_1: Rc<dyn Material> = Rc::new(Dielectric::new(1.50));
+    let material_1 = Rc::new(Material::dielectric(1.50));
     world.add(Rc::new(Sphere::still(
         Vec3::new(0.0, 1.0, 0.0),
         1.0,
         material_1,
     )));
 
-    let material_2: Rc<dyn Material> = Rc::new(Lambertian::from_color(Color::new(0.4, 0.2, 0.1)));
+    let material_2 = Rc::new(Material::lambertian_from_color(Color::new(0.4, 0.2, 0.1)));
     world.add(Rc::new(Sphere::still(
         Vec3::new(-4.0, 1.0, 0.0),
         1.0,
         material_2,
     )));
 
-    let material_3: Rc<dyn Material> = Rc::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
+    let material_3 = Rc::new(Material::metal(Color::new(0.7, 0.6, 0.5), 0.0));
     world.add(Rc::new(Sphere::still(
         Vec3::new(4.0, 1.0, 0.0),
         1.0,
@@ -207,16 +204,18 @@ fn checkered_spheres<'a>() -> (HittableList<'a>, Camera) {
         Color::new(0.9, 0.9, 0.9),
     ));
 
+    let sphere_mat = Rc::new(Material::lambertian(Rc::clone(&checker)));
+
     world.add(Rc::new(Sphere::still(
         Vec3::new(0.0, -10.0, 0.0),
         10.0,
-        Rc::new(Lambertian::new(Rc::clone(&checker))),
+        Rc::clone(&sphere_mat),
     )));
 
     world.add(Rc::new(Sphere::still(
         Vec3::new(0.0, 10.0, 0.0),
         10.0,
-        Rc::new(Lambertian::new(Rc::clone(&checker))),
+        Rc::clone(&sphere_mat),
     )));
 
     (
@@ -241,7 +240,7 @@ fn earth<'a>() -> (HittableList<'a>, Camera) {
     let mut world = HittableList::new();
 
     let earth_texture: Rc<dyn Texture> = Rc::new(ImageTexture::new("earthmap.jpg"));
-    let earth_surface: Rc<dyn Material> = Rc::new(Lambertian::new(Rc::clone(&earth_texture)));
+    let earth_surface = Rc::new(Material::lambertian(Rc::clone(&earth_texture)));
 
     world.add(Rc::new(Sphere::still(
         Vec3::new(0.0, 0.0, 0.0),
@@ -271,17 +270,18 @@ fn perlin_spheres<'a>() -> (HittableList<'a>, Camera) {
     let mut world = HittableList::new();
 
     let perlin_texture: Rc<dyn Texture> = Rc::new(NoiseTexture::new(4.0));
+    let perlin_mat = Rc::new(Material::lambertian(Rc::clone(&perlin_texture)));
 
     world.add(Rc::new(Sphere::still(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
-        Rc::new(Lambertian::new(Rc::clone(&perlin_texture))),
+        Rc::clone(&perlin_mat),
     )));
 
     world.add(Rc::new(Sphere::still(
         Vec3::new(0.0, 2.0, 0.0),
         2.0,
-        Rc::new(Lambertian::new(Rc::clone(&perlin_texture))),
+        Rc::clone(&perlin_mat),
     )));
 
     (
@@ -305,11 +305,11 @@ fn perlin_spheres<'a>() -> (HittableList<'a>, Camera) {
 fn quads<'a>() -> (HittableList<'a>, Camera) {
     let mut world = HittableList::new();
 
-    let left_red: Rc<dyn Material> = Rc::new(Lambertian::from_color(Color::new(1.0, 0.2, 0.2)));
-    let back_green: Rc<dyn Material> = Rc::new(Lambertian::from_color(Color::new(0.2, 1.0, 0.2)));
-    let right_blue: Rc<dyn Material> = Rc::new(Lambertian::from_color(Color::new(0.2, 0.2, 1.0)));
-    let upper_orange: Rc<dyn Material> = Rc::new(Lambertian::from_color(Color::new(1.0, 0.5, 0.0)));
-    let lower_teal: Rc<dyn Material> = Rc::new(Lambertian::from_color(Color::new(0.2, 0.8, 0.8)));
+    let left_red = Rc::new(Material::lambertian_from_color(Color::new(1.0, 0.2, 0.2)));
+    let back_green = Rc::new(Material::lambertian_from_color(Color::new(0.2, 1.0, 0.2)));
+    let right_blue = Rc::new(Material::lambertian_from_color(Color::new(0.2, 0.2, 1.0)));
+    let upper_orange = Rc::new(Material::lambertian_from_color(Color::new(1.0, 0.5, 0.0)));
+    let lower_teal = Rc::new(Material::lambertian_from_color(Color::new(0.2, 0.8, 0.8)));
 
     world.add(Rc::new(Quad::new(
         Vec3::new(-3.0, -2.0, 5.0),
@@ -368,20 +368,22 @@ fn simple_light<'a>() -> (HittableList<'a>, Camera) {
     let mut world = HittableList::new();
 
     let perlin_texture: Rc<dyn Texture> = Rc::new(NoiseTexture::new(4.0));
+    let perlin_mat = Rc::new(Material::lambertian(Rc::clone(&perlin_texture)));
 
     world.add(Rc::new(Sphere::still(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
-        Rc::new(Lambertian::new(Rc::clone(&perlin_texture))),
+        Rc::clone(&perlin_mat),
     )));
     world.add(Rc::new(Sphere::still(
         Vec3::new(0.0, 2.0, 0.0),
         2.0,
-        Rc::new(Lambertian::new(Rc::clone(&perlin_texture))),
+        Rc::clone(&perlin_mat),
     )));
 
-    let diffuse_light: Rc<dyn Material> =
-        Rc::new(DiffuseLight::from_color(Color::new(4.0, 4.0, 4.0)));
+    let diffuse_light = Rc::new(Material::diffuse_light_from_color(Color::new(
+        4.0, 4.0, 4.0,
+    )));
 
     world.add(Rc::new(Quad::new(
         Vec3::new(3.0, 1.0, -2.0),
@@ -417,10 +419,18 @@ fn simple_light<'a>() -> (HittableList<'a>, Camera) {
 fn cornell_box<'a>() -> (HittableList<'a>, Camera) {
     let mut world = HittableList::new();
 
-    let red: Rc<dyn Material> = Rc::new(Lambertian::from_color(Color::new(0.65, 0.05, 0.05)));
-    let white: Rc<dyn Material> = Rc::new(Lambertian::from_color(Color::new(0.73, 0.73, 0.73)));
-    let green: Rc<dyn Material> = Rc::new(Lambertian::from_color(Color::new(0.12, 0.45, 0.15)));
-    let light: Rc<dyn Material> = Rc::new(DiffuseLight::from_color(Color::new(15.0, 15.0, 15.0)));
+    let red = Rc::new(Material::lambertian_from_color(Color::new(
+        0.65, 0.05, 0.05,
+    )));
+    let white = Rc::new(Material::lambertian_from_color(Color::new(
+        0.73, 0.73, 0.73,
+    )));
+    let green = Rc::new(Material::lambertian_from_color(Color::new(
+        0.12, 0.45, 0.15,
+    )));
+    let light = Rc::new(Material::diffuse_light_from_color(Color::new(
+        15.0, 15.0, 15.0,
+    )));
 
     world.add(Rc::new(Quad::new(
         Vec3::new(555.0, 0.0, 0.0),

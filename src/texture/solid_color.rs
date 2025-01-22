@@ -7,11 +7,11 @@ pub struct SolidColor {
 }
 
 impl SolidColor {
-    pub fn new(albedo: Color) -> Self {
+    pub const fn new(albedo: Color) -> Self {
         Self { albedo }
     }
 
-    pub fn from_rgb(r: f64, g: f64, b: f64) -> Self {
+    pub const fn from_rgb(r: f64, g: f64, b: f64) -> Self {
         Self {
             albedo: Color::new(r, g, b),
         }

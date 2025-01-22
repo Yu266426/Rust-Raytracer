@@ -7,12 +7,12 @@ use super::{aabb::AABB, HitRecord, Hittable};
 pub struct Sphere {
     center: Ray,
     radius: f64,
-    material: Rc<dyn Material>,
+    material: Rc<Material>,
     bounding_box: AABB,
 }
 
 impl Sphere {
-    pub fn still(center: Vec3, radius: f64, material: Rc<dyn Material>) -> Self {
+    pub fn still(center: Vec3, radius: f64, material: Rc<Material>) -> Self {
         let r_vec = Vec3::new(radius, radius, radius);
 
         Self {
@@ -23,7 +23,7 @@ impl Sphere {
         }
     }
 
-    pub fn moving(start: Vec3, end: Vec3, radius: f64, material: Rc<dyn Material>) -> Self {
+    pub fn moving(start: Vec3, end: Vec3, radius: f64, material: Rc<Material>) -> Self {
         let r_vec = Vec3::new(radius, radius, radius);
 
         let box_1 = AABB::from_corners(start - r_vec, start + r_vec);

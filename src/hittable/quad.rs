@@ -9,14 +9,14 @@ pub struct Quad {
     u: Vec3,
     v: Vec3,
     w: Vec3,
-    material: Rc<dyn Material>,
+    material: Rc<Material>,
     bounding_box: AABB,
     normal: Vec3,
     d: f64,
 }
 
 impl Quad {
-    pub fn new(corner: Vec3, u: Vec3, v: Vec3, material: Rc<dyn Material>) -> Self {
+    pub fn new(corner: Vec3, u: Vec3, v: Vec3, material: Rc<Material>) -> Self {
         let n = u.cross(&v);
         let normal = n.normalize();
         let d = normal.dot(&corner); // D part of plane: Ax + By + Cz = D

@@ -12,14 +12,14 @@ use crate::{interval::Interval, material::Material, ray::Ray, vec3::Vec3};
 pub struct HitRecord {
     pub pos: Vec3,
     pub normal: Vec3,
-    pub material: Rc<dyn Material>,
+    pub material: Rc<Material>,
     pub t: f64,
     pub uv: (f64, f64),
     pub front_face: bool,
 }
 
 impl HitRecord {
-    pub fn new(pos: Vec3, t: f64, material: Rc<dyn Material>, uv: (f64, f64)) -> Self {
+    pub fn new(pos: Vec3, t: f64, material: Rc<Material>, uv: (f64, f64)) -> Self {
         Self {
             pos,
             normal: Vec3::zero(),

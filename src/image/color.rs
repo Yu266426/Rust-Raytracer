@@ -16,11 +16,11 @@ impl ToString for Color {
 }
 
 impl Color {
-    pub fn new(r: f64, g: f64, b: f64) -> Self {
+    pub const fn new(r: f64, g: f64, b: f64) -> Self {
         Self { r, g, b }
     }
 
-    pub fn black() -> Self {
+    pub const fn black() -> Self {
         Self {
             r: 0.0,
             g: 0.0,
@@ -28,7 +28,7 @@ impl Color {
         }
     }
 
-    pub fn white() -> Self {
+    pub const fn white() -> Self {
         Self {
             r: 1.0,
             g: 1.0,

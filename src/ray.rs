@@ -8,7 +8,7 @@ pub struct Ray {
 
 #[allow(dead_code)]
 impl Ray {
-    pub fn new(origin: Vec3, direction: Vec3, time: f64) -> Self {
+    pub const fn new(origin: Vec3, direction: Vec3, time: f64) -> Self {
         Self {
             origin,
             direction,
