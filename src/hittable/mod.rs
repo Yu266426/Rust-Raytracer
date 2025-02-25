@@ -55,7 +55,7 @@ pub struct HittableList {
 }
 
 #[allow(dead_code)]
-impl HittableList{
+impl HittableList {
     pub fn new() -> Self {
         Self {
             objects: Vec::new(),

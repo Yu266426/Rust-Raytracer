@@ -486,7 +486,7 @@ fn cornell_box() -> (HittableList, Camera) {
 }
 
 fn main() {
-    let (world, camera) = match 4 {
+    let (world, camera) = match 1 {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
         3 => earth(),

@@ -181,6 +181,37 @@ impl Camera {
     }
 
     fn ray_color(&self, ray: &Ray, depth: usize, world: &impl Hittable) -> Color {
+        // let mut ray = ray;
+        // let mut color = Color::black();
+        // let mut attenuation_accumulator = Color::new(1.0, 1.0, 1.0);
+
+        // for _ in 0..depth {
+        //     if let Some(hit_record) = world.hit(&ray, Interval::new(0.001, f64::INFINITY)) {
+        //         let emission = hit_record.material.emitted(hit_record.uv, &hit_record.pos);
+        //         // Emission is affected by all the attenuation up to this point
+        //         color = color + attenuation_accumulator.clone() * emission;
+
+        //         if let Some((attenuation, scattered)) =
+        //             hit_record.material.scatter(&ray, &hit_record)
+        //         {
+        //             // Keep track of attenuation up to this point
+        //             attenuation_accumulator = attenuation_accumulator * attenuation;
+
+        //             // Set new ray
+        //             ray = scattered;
+        //         } else {
+        //             // Hit light (purely emissive material)
+        //             break;
+        //         }
+        //     } else {
+        //         // Hit nothing (Aka. hit background)
+        //         color = color + attenuation_accumulator * self.background.clone();
+        //         break;
+        //     }
+        // }
+
+        // color
+
         if depth == 0 {
             return Color::black();
         }
