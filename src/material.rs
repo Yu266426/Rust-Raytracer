@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use nanorand::{tls_rng, Rng};
 
-use crate::{hittable::HitRecord, image::color::Color, ray::Ray, texture::TextureEnum, vec3::Vec3};
+use crate::{hittable::HitRecord, image::color::Color, ray::Ray, texture::Texture, vec3::Vec3};
 
 pub enum Material {
     Dielectric {
@@ -11,14 +11,17 @@ pub enum Material {
         refraction_index: f64,
     },
     DiffuseLight {
-        texture: Rc<TextureEnum>,
+        texture: Rc<Texture>,
     },
     Lambertian {
-        texture: Rc<TextureEnum>,
+        texture: Rc<Texture>,
     },
     Metal {
         albedo: Color,
         roughness: f64,
+    },
+    Isotropic {
+        texture: Rc<Texture>,
     },
 }
 
@@ -31,28 +34,38 @@ impl Material {
         }
     }
 
-    pub fn diffuse_light(texture: Rc<TextureEnum>) -> Self {
+    pub fn diffuse_light(texture: Rc<Texture>) -> Self {
         Self::DiffuseLight { texture }
     }
 
     pub fn diffuse_light_from_color(albedo: Color) -> Self {
         Self::DiffuseLight {
-            texture: Rc::new(TextureEnum::color(albedo)),
+            texture: Rc::new(Texture::color(albedo)),
         }
     }
 
-    pub fn lambertian(texture: Rc<TextureEnum>) -> Self {
+    pub fn lambertian(texture: Rc<Texture>) -> Self {
         Self::Lambertian { texture }
     }
 
     pub fn lambertian_from_color(albedo: Color) -> Self {
         Self::Lambertian {
-            texture: Rc::new(TextureEnum::color(albedo)),
+            texture: Rc::new(Texture::color(albedo)),
         }
     }
 
     pub fn metal(albedo: Color, roughness: f64) -> Self {
         Self::Metal { albedo, roughness }
+    }
+
+    pub fn isotropic(texture: Rc<Texture>) -> Self {
+        Self::Isotropic { texture }
+    }
+
+    pub fn isotropic_from_color(albedo: Color) -> Self {
+        Self::Isotropic {
+            texture: Rc::new(Texture::color(albedo)),
+        }
     }
 }
 
@@ -68,9 +81,11 @@ impl Material {
             Material::Metal { albedo, roughness } => {
                 Self::metal_scatter(albedo, *roughness, ray, hit_record)
             }
+            Material::Isotropic { texture } => Self::isotropic_scatter(texture, ray, hit_record),
         }
     }
-
+    
+    /// Calculates Schlick's approximation for reflectance
     fn dielectric_reflectance(cos: f64, refraction_index: f64) -> f64 {
         // Use Schlick's approximation for reflectance
         let mut r0 = (1.0 - refraction_index) / (1.0 + refraction_index);
@@ -115,7 +130,7 @@ impl Material {
     }
 
     fn lambertian_scatter(
-        texture: &Rc<TextureEnum>,
+        texture: &Rc<Texture>,
         ray: &Ray,
         hit_record: &HitRecord,
     ) -> Option<(Color, Ray)> {
@@ -149,6 +164,17 @@ impl Material {
         } else {
             None
         }
+    }
+
+    fn isotropic_scatter(
+        texture: &Rc<Texture>,
+        ray: &Ray,
+        hit_record: &HitRecord,
+    ) -> Option<(Color, Ray)> {
+        let scattered = Ray::new(hit_record.pos, Vec3::random_unit(), ray.time);
+        let attenuation = texture.value(hit_record.uv, &hit_record.pos);
+
+        Some((attenuation, scattered))
     }
 
     pub fn emitted(&self, uv: (f64, f64), pos: &Vec3) -> Color {

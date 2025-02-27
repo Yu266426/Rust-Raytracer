@@ -1,10 +1,6 @@
 use std::ops::Add;
 
-use crate::{
-    interval::{Interval, EMPTY},
-    ray::Ray,
-    vec3::Vec3,
-};
+use crate::{interval::Interval, ray::Ray, vec3::Vec3};
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
@@ -17,9 +13,9 @@ pub struct AABB {
 impl AABB {
     pub fn empty() -> Self {
         Self {
-            x: EMPTY,
-            y: EMPTY,
-            z: EMPTY,
+            x: Interval::EMPTY,
+            y: Interval::EMPTY,
+            z: Interval::EMPTY,
         }
     }
 

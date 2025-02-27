@@ -1,5 +1,6 @@
 mod aabb;
 pub mod bvh;
+pub mod constant_medium;
 pub mod quad;
 pub mod sphere;
 pub mod transform;

@@ -1,9 +1,6 @@
 use core::f64;
 use std::ops::Add;
 
-pub const EMPTY: Interval = Interval::new(f64::INFINITY, f64::NEG_INFINITY);
-pub const ALL: Interval = Interval::new(f64::NEG_INFINITY, f64::INFINITY);
-
 #[derive(Debug, Clone, Copy)]
 pub struct Interval {
     pub min: f64,
@@ -12,6 +9,9 @@ pub struct Interval {
 
 #[allow(dead_code)]
 impl Interval {
+    pub const EMPTY: Interval = Interval::new(f64::INFINITY, f64::NEG_INFINITY);
+    pub const ALL: Interval = Interval::new(f64::NEG_INFINITY, f64::INFINITY);
+
     pub const fn new(min: f64, max: f64) -> Self {
         Self { min, max }
     }

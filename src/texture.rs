@@ -6,11 +6,11 @@ use crate::{
     vec3::Vec3,
 };
 
-pub enum TextureEnum {
+pub enum Texture {
     Checker {
         inv_scale: f64,
-        even: Rc<TextureEnum>,
-        odd: Rc<TextureEnum>,
+        even: Rc<Texture>,
+        odd: Rc<Texture>,
     },
     Image {
         image: ExtImage,
@@ -24,7 +24,7 @@ pub enum TextureEnum {
     },
 }
 
-impl TextureEnum {
+impl Texture {
     pub fn checker(scale: f64, even: Rc<Self>, odd: Rc<Self>) -> Self {
         Self::Checker {
             inv_scale: 1.0 / scale,
@@ -65,24 +65,24 @@ impl TextureEnum {
     }
 }
 
-impl TextureEnum {
+impl Texture {
     pub fn value(&self, uv: (f64, f64), pos: &Vec3) -> Color {
         match self {
-            TextureEnum::Checker {
+            Texture::Checker {
                 inv_scale,
                 even,
                 odd,
             } => Self::checker_value(*inv_scale, even, odd, uv, pos),
-            TextureEnum::Image { image } => Self::image_value(image, uv, pos),
-            TextureEnum::Noise { noise, scale } => Self::noise_value(noise, *scale, uv, pos),
-            TextureEnum::Color { albedo } => albedo.clone(),
+            Texture::Image { image } => Self::image_value(image, uv, pos),
+            Texture::Noise { noise, scale } => Self::noise_value(noise, *scale, uv, pos),
+            Texture::Color { albedo } => albedo.clone(),
         }
     }
 
     fn checker_value(
         inv_scale: f64,
-        even: &Rc<TextureEnum>,
-        odd: &Rc<TextureEnum>,
+        even: &Rc<Texture>,
+        odd: &Rc<Texture>,
         uv: (f64, f64),
         pos: &Vec3,
     ) -> Color {

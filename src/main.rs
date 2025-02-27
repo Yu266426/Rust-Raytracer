@@ -5,6 +5,7 @@ use raytracer::{
     camera::Camera,
     hittable::{
         bvh::BVHNode,
+        constant_medium::ConstantMedium,
         quad::{quad_box, Quad},
         sphere::Sphere,
         transform::{RotateY, Translate},
@@ -13,7 +14,7 @@ use raytracer::{
     image::color::Color,
     material::Material,
     random::gen_range_f64,
-    texture::TextureEnum,
+    texture::Texture,
     vec3::Vec3,
 };
 
@@ -195,7 +196,7 @@ fn bouncing_spheres() -> (HittableList, Camera) {
 fn checkered_spheres() -> (HittableList, Camera) {
     let mut world = HittableList::new();
 
-    let checker = Rc::new(TextureEnum::checker_from_colors(
+    let checker = Rc::new(Texture::checker_from_colors(
         0.32,
         Color::new(0.2, 0.3, 0.1),
         Color::new(0.9, 0.9, 0.9),
@@ -235,7 +236,7 @@ fn checkered_spheres() -> (HittableList, Camera) {
 fn earth() -> (HittableList, Camera) {
     let mut world = HittableList::new();
 
-    let earth_texture = Rc::new(TextureEnum::image("earthmap.jpg"));
+    let earth_texture = Rc::new(Texture::image("earthmap.jpg"));
     let earth_surface = Rc::new(Material::lambertian(Rc::clone(&earth_texture)));
 
     world.add(Rc::new(Sphere::still(
@@ -264,7 +265,7 @@ fn earth() -> (HittableList, Camera) {
 fn perlin_spheres() -> (HittableList, Camera) {
     let mut world = HittableList::new();
 
-    let perlin_texture = Rc::new(TextureEnum::noise(4.0));
+    let perlin_texture = Rc::new(Texture::noise(4.0));
     let perlin_mat = Rc::new(Material::lambertian(Rc::clone(&perlin_texture)));
 
     world.add(Rc::new(Sphere::still(
@@ -360,7 +361,7 @@ fn quads() -> (HittableList, Camera) {
 fn simple_light() -> (HittableList, Camera) {
     let mut world = HittableList::new();
 
-    let perlin_texture = Rc::new(TextureEnum::noise(4.0));
+    let perlin_texture = Rc::new(Texture::noise(4.0));
     let perlin_mat = Rc::new(Material::lambertian(Rc::clone(&perlin_texture)));
 
     world.add(Rc::new(Sphere::still(
@@ -473,7 +474,11 @@ fn cornell_box() -> (HittableList, Camera) {
     );
     let box_1 = Rc::new(RotateY::new(box_1, 15.0));
     let box_1 = Rc::new(Translate::new(box_1, Vec3::new(265.0, 0.0, 295.0)));
-    world.add(box_1);
+    world.add(Rc::new(ConstantMedium::from_color(
+        box_1,
+        0.01,
+        Color::black(),
+    )));
 
     let box_2 = quad_box(
         Vec3::new(0.0, 0.0, 0.0),
@@ -482,7 +487,11 @@ fn cornell_box() -> (HittableList, Camera) {
     );
     let box_2 = Rc::new(RotateY::new(box_2, -18.0));
     let box_2 = Rc::new(Translate::new(box_2, Vec3::new(130.0, 0.0, 65.0)));
-    world.add(box_2);
+    world.add(Rc::new(ConstantMedium::from_color(
+        box_2,
+        0.01,
+        Color::white(),
+    )));
 
     (
         world,
