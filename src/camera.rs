@@ -1,14 +1,12 @@
 use std::{
     io::{self, Write},
-    sync::atomic::Ordering,
-    sync::{atomic::AtomicUsize, Arc},
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc, Mutex,
+    },
 };
 
 use nanorand::{Rng, WyRand};
-use rayon::{
-    iter::{IntoParallelIterator, ParallelIterator},
-    ThreadPoolBuilder,
-};
 
 use crate::{
     hittable::Hittable,
@@ -126,57 +124,77 @@ impl Camera {
     }
 
     pub fn render<H: Hittable + Sync>(&self, world: &H) -> Image {
-        let mut image = Image::new(self.image_width, self.image_height);
+        let image = Arc::new(Mutex::new(Image::new(self.image_width, self.image_height)));
 
         // Create a progress counter with thread-safe access
         let scanlines_processed = Arc::new(AtomicUsize::new(0));
 
-        let num_performance_cores = 8;
+        // Let Rayon decide the optimal thread count based on your system
+        let chunk_size = 128; // Adjust this value based on your specific workload
 
-        let pool = ThreadPoolBuilder::new()
-            .num_threads(num_performance_cores)
-            .build()
-            .unwrap();
-
-        // Process coordinates in parallel
-        let pixel_colors: Vec<(usize, usize, Color)> = pool.install(|| {
-            (0..self.image_height)
-                .into_par_iter()
-                .flat_map(move |row| {
-                    // Clone the Arc for each row to avoid ownership issues
+        rayon::scope(|s| {
+            // Process the image in square chunks for better cache locality
+            for chunk_y in (0..self.image_height).step_by(chunk_size) {
+                for chunk_x in (0..self.image_width).step_by(chunk_size) {
                     let scanlines_counter = Arc::clone(&scanlines_processed);
+                    let image_ref = Arc::clone(&image);
 
-                    (0..self.image_width).into_par_iter().map(move |col| {
+                    s.spawn(move |_| {
                         let mut rng = WyRand::new();
-                        let mut pixel_color = Color::black();
 
-                        // Sample each pixel
-                        for _ in 0..self.samples_per_pixel {
-                            let ray = self.get_ray(col, row, &mut rng);
-                            pixel_color += self.ray_color(ray, self.max_depth, world);
+                        // Process each pixel in the chunk
+                        let max_y = (chunk_y + chunk_size).min(self.image_height);
+                        let max_x = (chunk_x + chunk_size).min(self.image_width);
+
+                        let mut chunk_pixels =
+                            Vec::with_capacity((max_y - chunk_y) * (max_x - chunk_x));
+
+                        for row in chunk_y..max_y {
+                            for col in chunk_x..max_x {
+                                let mut pixel_color = Color::black();
+
+                                // Sample each pixel
+                                for _ in 0..self.samples_per_pixel {
+                                    let ray = self.get_ray(col, row, &mut rng);
+                                    pixel_color += self.ray_color(ray, self.max_depth, world);
+                                }
+
+                                // Scale the pixel color
+                                chunk_pixels.push((
+                                    row,
+                                    col,
+                                    pixel_color * self.pixel_samples_scale,
+                                ));
+                            }
                         }
 
-                        // Progress reporting
-                        if col == 0 {
-                            let processed = scanlines_counter.fetch_add(1, Ordering::Relaxed);
-                            let remaining = self.image_height - processed;
-                            print!("\rScanlines remaining: {} ", remaining);
-                            io::stdout().flush().unwrap();
+                        // Update the image with our chunk results
+                        let mut img = image_ref.lock().unwrap();
+                        for (row, col, color) in chunk_pixels {
+                            img.set_pixel(color, row, col);
                         }
+                        drop(img); // Explicitly release the lock
 
-                        (row, col, pixel_color * self.pixel_samples_scale)
-                    })
-                })
-                .collect()
+                        // Progress reporting (once per chunk instead of per row)
+                        let processed = scanlines_counter.fetch_add(1, Ordering::Relaxed);
+                        let total_chunks = ((self.image_height + chunk_size - 1) / chunk_size)
+                            * ((self.image_width + chunk_size - 1) / chunk_size);
+                        let remaining = total_chunks - processed;
+
+                        print!("\rChunks remaining: {} ", remaining);
+                        io::stdout().flush().unwrap();
+                    });
+                }
+            }
         });
 
-        // Set all pixels in the image
-        for (row, col, color) in pixel_colors {
-            image.set_pixel(color, row, col);
-        }
-
         println!("\rDone!                             ");
-        image
+
+        // Unwrap the Arc<Mutex<Image>> to get the final Image
+        Arc::try_unwrap(image)
+            .expect("There should be no more references to the image")
+            .into_inner()
+            .expect("Mutex should not be poisoned")
     }
 
     fn get_ray(&self, col: usize, row: usize, rng: &mut WyRand) -> Ray {
@@ -244,28 +262,5 @@ impl Camera {
         }
 
         color
-
-        // if depth == 0 {
-        //     return Color::black();
-        // }
-
-        // // Hit something
-        // if let Some(hit_record) = world.hit(ray, Interval::new(0.001, f64::INFINITY)) {
-        //     let emission = hit_record.material.emitted(hit_record.uv, &hit_record.pos);
-        //     if let Some((attenuation, scattered)) = hit_record.material.scatter(ray, &hit_record) {
-        //         return attenuation * self.ray_color(&scattered, depth - 1, world) + emission;
-        //     } else {
-        //         return emission;
-        //     }
-        // }
-
-        // // No hits on objects
-        // /* Old sky code
-        // let unit_direction = ray.direction.normalize();
-        // let a = 0.5 * (unit_direction.y + 1.0);
-
-        // (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)\
-        // */
-        // self.background.clone()
     }
 }

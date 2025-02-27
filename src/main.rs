@@ -654,7 +654,7 @@ fn final_scene() -> (HittableList, Camera) {
 }
 
 fn main() {
-    let (world, camera) = match 7 {
+    let (world, camera) = match 1 {
         0 => weekend_1(),
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
