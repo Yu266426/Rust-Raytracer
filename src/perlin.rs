@@ -44,13 +44,13 @@ impl Perlin {
     }
 
     pub fn noise(&self, pos: &Vec3) -> f64 {
-        let u = pos.x - pos.x.floor();
-        let v = pos.y - pos.y.floor();
-        let w = pos.z - pos.z.floor();
+        let u = pos.get_x() - pos.get_x().floor();
+        let v = pos.get_y() - pos.get_y().floor();
+        let w = pos.get_z() - pos.get_z().floor();
 
-        let i = pos.x.floor() as i32;
-        let j = pos.y.floor() as i32;
-        let k = pos.z.floor() as i32;
+        let i = pos.get_x().floor() as i32;
+        let j = pos.get_y().floor() as i32;
+        let k = pos.get_z().floor() as i32;
 
         let mut c: [[[Vec3; 2]; 2]; 2] = [[[Vec3::zero(); 2]; 2]; 2];
 

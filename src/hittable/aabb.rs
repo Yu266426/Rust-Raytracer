@@ -30,22 +30,22 @@ impl AABB {
     }
 
     pub fn from_corners(a: Vec3, b: Vec3) -> Self {
-        let x = if a.x <= b.x {
-            Interval::new(a.x, b.x)
+        let x = if a.get_x() <= b.get_x() {
+            Interval::new(a.get_x(), b.get_x())
         } else {
-            Interval::new(b.x, a.x)
+            Interval::new(b.get_x(), a.get_x())
         };
 
-        let y = if a.y <= b.y {
-            Interval::new(a.y, b.y)
+        let y = if a.get_y() <= b.get_y() {
+            Interval::new(a.get_y(), b.get_y())
         } else {
-            Interval::new(b.y, a.y)
+            Interval::new(b.get_y(), a.get_y())
         };
 
-        let z = if a.z <= b.z {
-            Interval::new(a.z, b.z)
+        let z = if a.get_z() <= b.get_z() {
+            Interval::new(a.get_z(), b.get_z())
         } else {
-            Interval::new(b.z, a.z)
+            Interval::new(b.get_z(), a.get_z())
         };
 
         Self { x, y, z }

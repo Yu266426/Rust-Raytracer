@@ -38,8 +38,8 @@ impl Sphere {
     }
 
     fn get_sphere_uv(normal: &Vec3) -> (f64, f64) {
-        let theta = (-normal.y).acos();
-        let phi = (-normal.z).atan2(normal.x) + PI;
+        let theta = (-normal.get_y()).acos();
+        let phi = (-normal.get_z()).atan2(normal.get_x()) + PI;
 
         (phi / (2.0 * PI), theta / PI)
     }

@@ -150,8 +150,8 @@ impl Camera {
 
         let offset = self.sample_square();
         let pixel_sample_pos = self.top_left_pixel_pos
-            + (col as f64 + offset.x) * self.pixel_delta_u
-            + (row as f64 + offset.y) * self.pixel_delta_v;
+            + (col as f64 + offset.get_x()) * self.pixel_delta_u
+            + (row as f64 + offset.get_y()) * self.pixel_delta_v;
 
         let ray_origin = if self.defocus_angle <= 0.0 {
             self.center
@@ -177,7 +177,7 @@ impl Camera {
     fn defocus_disk_sample(&self) -> Vec3 {
         let p = Vec3::random_in_unit_disk();
 
-        self.center + p.x * self.defocus_disk_u + p.y * self.defocus_disk_v
+        self.center + p.get_x() * self.defocus_disk_u + p.get_y() * self.defocus_disk_v
     }
 
     fn ray_color(&self, ray: &Ray, depth: usize, world: &impl Hittable) -> Color {

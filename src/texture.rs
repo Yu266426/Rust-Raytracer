@@ -86,9 +86,9 @@ impl TextureEnum {
         uv: (f64, f64),
         pos: &Vec3,
     ) -> Color {
-        let x = (inv_scale * pos.x).floor() as i32;
-        let y = (inv_scale * pos.y).floor() as i32;
-        let z = (inv_scale * pos.z).floor() as i32;
+        let x = (inv_scale * pos.get_x()).floor() as i32;
+        let y = (inv_scale * pos.get_y()).floor() as i32;
+        let z = (inv_scale * pos.get_z()).floor() as i32;
 
         if (x + y + z) % 2 == 0 {
             even.value(uv, pos)
@@ -127,6 +127,6 @@ impl TextureEnum {
         // Color::new(1.0, 1.0, 1.0) * 0.5 * (1.0 + self.noise.noise(&(self.scale * pos)))
 
         // Use turb(ulence) to offset what would be a sin wave in the z direction
-        Color::new(0.5, 0.5, 0.5) * (1.0 + (scale * pos.z + 10.0 * noise.turb(&pos, 7)).sin())
+        Color::new(0.5, 0.5, 0.5) * (1.0 + (scale * pos.get_z() + 10.0 * noise.turb(&pos, 7)).sin())
     }
 }
