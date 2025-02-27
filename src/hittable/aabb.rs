@@ -1,3 +1,5 @@
+use std::ops::Add;
+
 use crate::{
     interval::{Interval, EMPTY},
     ray::Ray,
@@ -7,9 +9,9 @@ use crate::{
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct AABB {
-    x: Interval,
-    y: Interval,
-    z: Interval,
+    pub x: Interval,
+    pub y: Interval,
+    pub z: Interval,
 }
 
 impl AABB {
@@ -133,6 +135,30 @@ impl AABB {
         }
         if aabb.z.size() < delta {
             aabb.z = aabb.z.expand(delta);
+        }
+    }
+}
+
+impl Add<Vec3> for AABB {
+    type Output = AABB;
+
+    fn add(self, rhs: Vec3) -> Self::Output {
+        Self::Output {
+            x: self.x + rhs.x,
+            y: self.y + rhs.x,
+            z: self.z + rhs.x,
+        }
+    }
+}
+
+impl Add<Vec3> for &AABB {
+    type Output = AABB;
+
+    fn add(self, rhs: Vec3) -> Self::Output {
+        Self::Output {
+            x: self.x + rhs.x,
+            y: self.y + rhs.x,
+            z: self.z + rhs.x,
         }
     }
 }

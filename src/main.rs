@@ -7,6 +7,7 @@ use raytracer::{
         bvh::BVHNode,
         quad::{quad_box, Quad},
         sphere::Sphere,
+        transform::{RotateY, Translate},
         HittableList,
     },
     image::color::Color,
@@ -23,7 +24,6 @@ const SKY_COLOUR: Color = Color::new(0.7, 0.8, 1.0);
 const SAMPLES_PER_PIXEL: usize = 100;
 const MAX_DEPTH: usize = 50;
 
-#[allow(dead_code)]
 fn weekend_1() -> (HittableList, Camera) {
     let mut world = HittableList::new();
 
@@ -104,7 +104,6 @@ fn weekend_1() -> (HittableList, Camera) {
     )
 }
 
-#[allow(dead_code)]
 fn bouncing_spheres() -> (HittableList, Camera) {
     let mut world = HittableList::new();
 
@@ -193,7 +192,6 @@ fn bouncing_spheres() -> (HittableList, Camera) {
     )
 }
 
-#[allow(dead_code)]
 fn checkered_spheres() -> (HittableList, Camera) {
     let mut world = HittableList::new();
 
@@ -234,7 +232,6 @@ fn checkered_spheres() -> (HittableList, Camera) {
     )
 }
 
-#[allow(dead_code)]
 fn earth() -> (HittableList, Camera) {
     let mut world = HittableList::new();
 
@@ -264,7 +261,6 @@ fn earth() -> (HittableList, Camera) {
     )
 }
 
-#[allow(dead_code)]
 fn perlin_spheres() -> (HittableList, Camera) {
     let mut world = HittableList::new();
 
@@ -300,7 +296,6 @@ fn perlin_spheres() -> (HittableList, Camera) {
     )
 }
 
-#[allow(dead_code)]
 fn quads() -> (HittableList, Camera) {
     let mut world = HittableList::new();
 
@@ -362,7 +357,6 @@ fn quads() -> (HittableList, Camera) {
     )
 }
 
-#[allow(dead_code)]
 fn simple_light() -> (HittableList, Camera) {
     let mut world = HittableList::new();
 
@@ -414,7 +408,6 @@ fn simple_light() -> (HittableList, Camera) {
     )
 }
 
-#[allow(dead_code)]
 fn cornell_box() -> (HittableList, Camera) {
     let mut world = HittableList::new();
 
@@ -473,30 +466,36 @@ fn cornell_box() -> (HittableList, Camera) {
         Rc::clone(&white),
     )));
 
-    world.add(quad_box(
-        Vec3::new(130.0, 0.0, 65.0),
-        Vec3::new(295.0, 165.0, 230.0),
+    let box_1 = quad_box(
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(165.0, 330.0, 165.0),
         Rc::new(Material::lambertian_from_color(Color::white())),
-    ));
+    );
+    let box_1 = Rc::new(RotateY::new(box_1, 15.0));
+    let box_1 = Rc::new(Translate::new(box_1, Vec3::new(265.0, 0.0, 295.0)));
+    world.add(box_1);
 
-    world.add(quad_box(
-        Vec3::new(265.0, 0.0, 295.0),
-        Vec3::new(430.0, 330.0, 460.0),
+    let box_2 = quad_box(
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(165.0, 165.0, 165.0),
         Rc::new(Material::lambertian_from_color(Color::white())),
-    ));
+    );
+    let box_2 = Rc::new(RotateY::new(box_2, -18.0));
+    let box_2 = Rc::new(Translate::new(box_2, Vec3::new(130.0, 0.0, 65.0)));
+    world.add(box_2);
 
     (
         world,
         Camera::new(
             1.0,
-            200,
+            400,
             40.0,
             Vec3::new(278.0, 278.0, -800.0),
             Vec3::new(278.0, 278.0, 0.0),
             0.0,
             1.0,
             Color::new(0.0, 0.0, 0.0),
-            200,
+            500,
             100,
         ),
     )
@@ -504,6 +503,7 @@ fn cornell_box() -> (HittableList, Camera) {
 
 fn main() {
     let (world, camera) = match 7 {
+        0 => weekend_1(),
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
         3 => earth(),
