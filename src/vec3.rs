@@ -1,47 +1,52 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub};
-use std::simd::prelude::*;
 
 use nanorand::{tls_rng, Rng};
 
 use crate::{image::color::Color, random::gen_range_f64};
 
-const EPSILON: f64 = 1e-8;
-
-// #[repr(align(32))]
 #[derive(Debug, Clone, Copy)]
 pub struct Vec3 {
-    vec: Simd<f64, 4>,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
 }
 
 impl Vec3 {
     pub const fn new(x: f64, y: f64, z: f64) -> Self {
-        Self {
-            vec: f64x4::from_array([x, y, z, 0.0]),
-        }
+        Self { x, y, z }
     }
 
-    /// Returns a vector with all components set to zero
     pub const fn zero() -> Self {
         Self {
-            vec: f64x4::splat(0.0),
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
         }
     }
 
     pub const fn up() -> Self {
-        Self::new(0.0, 1.0, 0.0)
+        Self {
+            x: 0.0,
+            y: 1.0,
+            z: 0.0,
+        }
     }
 
     pub fn random() -> Self {
         let mut rng = tls_rng();
-        Self::new(rng.generate(), rng.generate(), rng.generate())
+        Self {
+            x: rng.generate(),
+            y: rng.generate(),
+            z: rng.generate(),
+        }
     }
 
     pub fn random_range(min: f64, max: f64) -> Self {
-        Self::new(
-            gen_range_f64(min, max),
-            gen_range_f64(min, max),
-            gen_range_f64(min, max),
-        )
+        Self {
+            x: gen_range_f64(min, max),
+            y: gen_range_f64(min, max),
+            z: gen_range_f64(min, max),
+        }
     }
 
     pub fn random_unit() -> Self {
@@ -49,7 +54,8 @@ impl Vec3 {
         loop {
             let p = Self::random_range(-1.0, 1.0);
             let len_sq = p.length_squared();
-            if (1e-160..=1.0).contains(&len_sq) {
+
+            if 1e-160 < len_sq && len_sq <= 1.0 {
                 return p / len_sq.sqrt();
             }
         }
@@ -79,92 +85,54 @@ impl Vec3 {
 
     pub fn to_color(&self) -> Color {
         Color {
-            r: self.get_x(),
-            g: self.get_y(),
-            b: self.get_z(),
+            r: self.x,
+            g: self.y,
+            b: self.z,
         }
     }
 }
 
 impl Vec3 {
-    #[inline]
-    pub fn get_x(&self) -> f64 {
-        self.vec[0]
-    }
-
-    #[inline]
-    pub fn get_y(&self) -> f64 {
-        self.vec[1]
-    }
-
-    #[inline]
-    pub fn get_z(&self) -> f64 {
-        self.vec[2]
-    }
-
-    #[inline]
-    pub fn set_x(&mut self, value: f64) {
-        self.vec[0] = value;
-    }
-
-    #[inline]
-    pub fn set_y(&mut self, value: f64) {
-        self.vec[1] = value;
-    }
-
-    #[inline]
-    pub fn set_z(&mut self, value: f64) {
-        self.vec[2] = value;
-    }
-
-    #[inline]
     pub fn get(&self, n: usize) -> f64 {
-        assert!(n <= 2);
-
-        self.vec[n]
+        if n == 0 {
+            self.x
+        } else if n == 1 {
+            self.y
+        } else {
+            self.z
+        }
     }
 
-    #[inline]
-    pub fn sum(&self) -> f64 {
-        self.get_x() + self.get_y() + self.get_z()
-    }
-
-    #[inline]
     pub fn length_squared(&self) -> f64 {
-        (self * self).sum()
+        self.x * self.x + self.y * self.y + self.z * self.z
     }
 
-    #[inline]
     pub fn length(&self) -> f64 {
         self.length_squared().sqrt()
     }
 
-    #[inline]
     pub fn dot(&self, v: &Self) -> f64 {
-        (self * v).sum()
+        self.x * v.x + self.y * v.y + self.z * v.z
     }
 
-    #[inline]
     pub fn cross(&self, v: &Self) -> Self {
-        let a_zxy = simd_swizzle!(self.vec, [2, 0, 1, 3]); // [z,x,y,w]
-        let b_zxy = simd_swizzle!(v.vec, [2, 0, 1, 3]); // [z,x,y,w]
-
         Self {
-            vec: simd_swizzle!(a_zxy * v.vec - self.vec * b_zxy, [2, 0, 1, 3]),
+            x: self.y * v.z - self.z * v.y,
+            y: self.z * v.x - self.x * v.z,
+            z: self.x * v.y - self.y * v.x,
         }
     }
 
-    #[inline]
     pub fn normalize(&self) -> Self {
         *self / self.length()
     }
 
-    #[inline]
     pub fn near_zero(&self) -> bool {
-        self.vec.abs().le(&f64x4::splat(EPSILON))
+        let e = 1e-8;
+
+        self.x.abs() < e && self.y.abs() < e && self.z.abs() < e
     }
 
-    #[inline]
     pub fn reflected(&self, normal: &Self) -> Self {
         *self - 2.0 * self.dot(normal) * *normal
     }
@@ -182,12 +150,7 @@ impl Vec3 {
 
 impl ToString for Vec3 {
     fn to_string(&self) -> String {
-        format!(
-            "{:.2} {:.2} {:.2}",
-            self.get_x(),
-            self.get_y(),
-            self.get_z()
-        )
+        format!("{:.2} {:.2} {:.2}", self.x, self.y, self.z)
     }
 }
 
@@ -195,7 +158,11 @@ impl Neg for Vec3 {
     type Output = Vec3;
 
     fn neg(self) -> Self::Output {
-        Self::Output { vec: -self.vec }
+        Self::Output {
+            x: -self.x,
+            y: -self.y,
+            z: -self.z,
+        }
     }
 }
 
@@ -204,14 +171,18 @@ impl Add for Vec3 {
 
     fn add(self, rhs: Self) -> Self::Output {
         Self::Output {
-            vec: self.vec + rhs.vec,
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+            z: self.z + rhs.z,
         }
     }
 }
 
 impl AddAssign for Vec3 {
     fn add_assign(&mut self, rhs: Self) {
-        self.vec += rhs.vec;
+        self.x += rhs.x;
+        self.y += rhs.y;
+        self.z += rhs.z;
     }
 }
 
@@ -220,7 +191,9 @@ impl Sub for Vec3 {
 
     fn sub(self, rhs: Self) -> Self::Output {
         Self::Output {
-            vec: self.vec - rhs.vec,
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+            z: self.z - rhs.z,
         }
     }
 }
@@ -228,21 +201,11 @@ impl Sub for Vec3 {
 impl Mul for Vec3 {
     type Output = Vec3;
 
-    #[inline]
     fn mul(self, rhs: Self) -> Self::Output {
         Self::Output {
-            vec: self.vec * rhs.vec,
-        }
-    }
-}
-
-impl Mul for &Vec3 {
-    type Output = Vec3;
-
-    #[inline]
-    fn mul(self, rhs: Self) -> Self::Output {
-        Self::Output {
-            vec: self.vec * rhs.vec,
+            x: self.x * rhs.x,
+            y: self.y * rhs.y,
+            z: self.z * rhs.z,
         }
     }
 }
@@ -252,7 +215,9 @@ impl Mul<Vec3> for f64 {
 
     fn mul(self, rhs: Vec3) -> Self::Output {
         Self::Output {
-            vec: f64x4::splat(self) * rhs.vec,
+            x: self * rhs.x,
+            y: self * rhs.y,
+            z: self * rhs.z,
         }
     }
 }
@@ -262,7 +227,9 @@ impl Mul<&Vec3> for f64 {
 
     fn mul(self, rhs: &Vec3) -> Self::Output {
         Self::Output {
-            vec: f64x4::splat(self) * rhs.vec,
+            x: self * rhs.x,
+            y: self * rhs.y,
+            z: self * rhs.z,
         }
     }
 }
@@ -277,7 +244,9 @@ impl Mul<f64> for Vec3 {
 
 impl MulAssign<f64> for Vec3 {
     fn mul_assign(&mut self, rhs: f64) {
-        self.vec *= f64x4::splat(rhs);
+        self.x *= rhs;
+        self.y *= rhs;
+        self.z *= rhs;
     }
 }
 
@@ -291,6 +260,8 @@ impl Div<f64> for Vec3 {
 
 impl DivAssign<f64> for Vec3 {
     fn div_assign(&mut self, rhs: f64) {
-        self.vec /= f64x4::splat(rhs);
+        self.x /= rhs;
+        self.y /= rhs;
+        self.z /= rhs;
     }
 }

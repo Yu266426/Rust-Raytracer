@@ -1,5 +1,3 @@
-#![feature(portable_simd)]
-
 pub mod camera;
 pub mod hittable;
 pub mod image;
