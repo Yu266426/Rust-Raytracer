@@ -5,7 +5,7 @@ pub mod quad;
 pub mod sphere;
 pub mod transform;
 
-use std::rc::Rc;
+use std::sync::Arc;
 
 use aabb::AABB;
 
@@ -14,14 +14,14 @@ use crate::{interval::Interval, material::Material, ray::Ray, vec3::Vec3};
 pub struct HitRecord {
     pub pos: Vec3,
     pub normal: Vec3,
-    pub material: Rc<Material>,
+    pub material: Arc<Material>,
     pub t: f64,
     pub uv: (f64, f64),
     pub front_face: bool,
 }
 
 impl HitRecord {
-    pub fn new(pos: Vec3, t: f64, material: Rc<Material>, uv: (f64, f64)) -> Self {
+    pub fn new(pos: Vec3, t: f64, material: Arc<Material>, uv: (f64, f64)) -> Self {
         Self {
             pos,
             normal: Vec3::zero(),
@@ -45,14 +45,14 @@ impl HitRecord {
     }
 }
 
-pub trait Hittable {
+pub trait Hittable: Send + Sync {
     fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<HitRecord>;
 
     fn bounding_box(&self) -> &AABB;
 }
 
 pub struct HittableList {
-    objects: Vec<Rc<dyn Hittable>>,
+    objects: Vec<Arc<dyn Hittable>>,
     bounding_box: AABB,
 }
 
@@ -65,7 +65,7 @@ impl HittableList {
         }
     }
 
-    pub fn from_object(object: Rc<dyn Hittable>) -> Self {
+    pub fn from_object(object: Arc<dyn Hittable>) -> Self {
         let mut objects = Vec::new();
         objects.push(object);
 
@@ -79,7 +79,7 @@ impl HittableList {
         self.objects.clear();
     }
 
-    pub fn add(&mut self, object: Rc<dyn Hittable>) {
+    pub fn add(&mut self, object: Arc<dyn Hittable>) {
         self.bounding_box = AABB::from_aabbs(&self.bounding_box, object.bounding_box());
         self.objects.push(object);
     }

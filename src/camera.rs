@@ -1,9 +1,14 @@
 use std::{
     io::{self, Write},
-    sync::Mutex,
+    sync::atomic::Ordering,
+    sync::{atomic::AtomicUsize, Arc},
 };
 
 use nanorand::{Rng, WyRand};
+use rayon::{
+    iter::{IntoParallelIterator, ParallelIterator},
+    ThreadPoolBuilder,
+};
 
 use crate::{
     hittable::Hittable,
@@ -32,7 +37,6 @@ pub struct Camera {
     pub samples_per_pixel: usize,
     pub pixel_samples_scale: f64,
     pub max_depth: usize,
-    rng: Mutex<WyRand>,
 }
 
 impl Camera {
@@ -56,7 +60,6 @@ impl Camera {
             samples_per_pixel: 10,
             pixel_samples_scale: 0.0,
             max_depth: 10,
-            rng: Mutex::new(WyRand::new()),
         }
     }
 
@@ -122,33 +125,64 @@ impl Camera {
         self.defocus_disk_v = v * defocus_radius;
     }
 
-    pub fn render(&self, world: &impl Hittable) -> Image {
+    pub fn render<H: Hittable + Sync>(&self, world: &H) -> Image {
         let mut image = Image::new(self.image_width, self.image_height);
 
-        for row in 0..self.image_height {
-            print!("\rScanlines remaining: {} ", self.image_height - row);
-            io::stdout().flush().unwrap();
+        // Create a progress counter with thread-safe access
+        let scanlines_processed = Arc::new(AtomicUsize::new(0));
 
-            for col in 0..self.image_width {
-                let mut color = Color::black();
+        let num_performance_cores = 8;
 
-                for _ in 0..self.samples_per_pixel {
-                    let ray = self.get_ray(col, row);
-                    color += self.ray_color(&ray, self.max_depth, world);
-                }
+        let pool = ThreadPoolBuilder::new()
+            .num_threads(num_performance_cores)
+            .build()
+            .unwrap();
 
-                image.set_pixel(color * self.pixel_samples_scale, row, col);
-            }
+        // Process coordinates in parallel
+        let pixel_colors: Vec<(usize, usize, Color)> = pool.install(|| {
+            (0..self.image_height)
+                .into_par_iter()
+                .flat_map(move |row| {
+                    // Clone the Arc for each row to avoid ownership issues
+                    let scanlines_counter = Arc::clone(&scanlines_processed);
+
+                    (0..self.image_width).into_par_iter().map(move |col| {
+                        let mut rng = WyRand::new();
+                        let mut pixel_color = Color::black();
+
+                        // Sample each pixel
+                        for _ in 0..self.samples_per_pixel {
+                            let ray = self.get_ray(col, row, &mut rng);
+                            pixel_color += self.ray_color(ray, self.max_depth, world);
+                        }
+
+                        // Progress reporting
+                        if col == 0 {
+                            let processed = scanlines_counter.fetch_add(1, Ordering::Relaxed);
+                            let remaining = self.image_height - processed;
+                            print!("\rScanlines remaining: {} ", remaining);
+                            io::stdout().flush().unwrap();
+                        }
+
+                        (row, col, pixel_color * self.pixel_samples_scale)
+                    })
+                })
+                .collect()
+        });
+
+        // Set all pixels in the image
+        for (row, col, color) in pixel_colors {
+            image.set_pixel(color, row, col);
         }
-        println!("\rDone!                             ");
 
+        println!("\rDone!                             ");
         image
     }
 
-    fn get_ray(&self, col: usize, row: usize) -> Ray {
+    fn get_ray(&self, col: usize, row: usize, rng: &mut WyRand) -> Ray {
         // Construct a camera ray from origin and directed at randomly sampled point around pixel location i, j
 
-        let offset = self.sample_square();
+        let offset = self.sample_square(rng);
         let pixel_sample_pos = self.top_left_pixel_pos
             + (col as f64 + offset.x) * self.pixel_delta_u
             + (row as f64 + offset.y) * self.pixel_delta_v;
@@ -160,13 +194,12 @@ impl Camera {
         };
 
         let ray_direction = pixel_sample_pos - ray_origin;
-        let ray_time = self.rng.lock().unwrap().generate();
+        let ray_time = rng.generate();
 
         Ray::new(ray_origin, ray_direction, ray_time)
     }
 
-    fn sample_square(&self) -> Vec3 {
-        let mut rng = self.rng.lock().unwrap();
+    fn sample_square(&self, rng: &mut WyRand) -> Vec3 {
         Vec3::new(
             rng.generate::<f64>() - 0.5,
             rng.generate::<f64>() - 0.5,
@@ -180,59 +213,59 @@ impl Camera {
         self.center + p.x * self.defocus_disk_u + p.y * self.defocus_disk_v
     }
 
-    fn ray_color(&self, ray: &Ray, depth: usize, world: &impl Hittable) -> Color {
-        // let mut ray = ray;
-        // let mut color = Color::black();
-        // let mut attenuation_accumulator = Color::new(1.0, 1.0, 1.0);
+    fn ray_color(&self, ray: Ray, depth: usize, world: &impl Hittable) -> Color {
+        let mut ray = ray;
+        let mut color = Color::black();
+        let mut attenuation_accumulator = Color::new(1.0, 1.0, 1.0);
 
-        // for _ in 0..depth {
-        //     if let Some(hit_record) = world.hit(&ray, Interval::new(0.001, f64::INFINITY)) {
-        //         let emission = hit_record.material.emitted(hit_record.uv, &hit_record.pos);
-        //         // Emission is affected by all the attenuation up to this point
-        //         color = color + attenuation_accumulator.clone() * emission;
+        for _ in 0..depth {
+            if let Some(hit_record) = world.hit(&ray, Interval::new(0.001, f64::INFINITY)) {
+                let emission = hit_record.material.emitted(hit_record.uv, &hit_record.pos);
+                // Emission is affected by all the attenuation up to this point
+                color = color + attenuation_accumulator.clone() * emission;
 
-        //         if let Some((attenuation, scattered)) =
-        //             hit_record.material.scatter(&ray, &hit_record)
-        //         {
-        //             // Keep track of attenuation up to this point
-        //             attenuation_accumulator = attenuation_accumulator * attenuation;
+                if let Some((attenuation, scattered)) =
+                    hit_record.material.scatter(&ray, &hit_record)
+                {
+                    // Keep track of attenuation up to this point
+                    attenuation_accumulator = attenuation_accumulator * attenuation;
 
-        //             // Set new ray
-        //             ray = scattered;
-        //         } else {
-        //             // Hit light (purely emissive material)
-        //             break;
-        //         }
-        //     } else {
-        //         // Hit nothing (Aka. hit background)
-        //         color = color + attenuation_accumulator * self.background.clone();
-        //         break;
-        //     }
-        // }
-
-        // color
-
-        if depth == 0 {
-            return Color::black();
-        }
-
-        // Hit something
-        if let Some(hit_record) = world.hit(ray, Interval::new(0.001, f64::INFINITY)) {
-            let emission = hit_record.material.emitted(hit_record.uv, &hit_record.pos);
-            if let Some((attenuation, scattered)) = hit_record.material.scatter(ray, &hit_record) {
-                return attenuation * self.ray_color(&scattered, depth - 1, world) + emission;
+                    // Set new ray
+                    ray = scattered;
+                } else {
+                    // Hit light (purely emissive material)
+                    break;
+                }
             } else {
-                return emission;
+                // Hit nothing (Aka. hit background)
+                color = color + attenuation_accumulator * self.background.clone();
+                break;
             }
         }
 
-        // No hits on objects
-        /* Old sky code
-        let unit_direction = ray.direction.normalize();
-        let a = 0.5 * (unit_direction.y + 1.0);
+        color
 
-        (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)\
-        */
-        self.background.clone()
+        // if depth == 0 {
+        //     return Color::black();
+        // }
+
+        // // Hit something
+        // if let Some(hit_record) = world.hit(ray, Interval::new(0.001, f64::INFINITY)) {
+        //     let emission = hit_record.material.emitted(hit_record.uv, &hit_record.pos);
+        //     if let Some((attenuation, scattered)) = hit_record.material.scatter(ray, &hit_record) {
+        //         return attenuation * self.ray_color(&scattered, depth - 1, world) + emission;
+        //     } else {
+        //         return emission;
+        //     }
+        // }
+
+        // // No hits on objects
+        // /* Old sky code
+        // let unit_direction = ray.direction.normalize();
+        // let a = 0.5 * (unit_direction.y + 1.0);
+
+        // (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)\
+        // */
+        // self.background.clone()
     }
 }

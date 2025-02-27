@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::{
     image::color::Color, interval::Interval, material::Material, random::gen_f64, ray::Ray,
@@ -8,25 +8,25 @@ use crate::{
 use super::{aabb::AABB, HitRecord, Hittable};
 
 pub struct ConstantMedium {
-    boundary: Rc<dyn Hittable>,
+    boundary: Arc<dyn Hittable>,
     neg_inv_density: f64,
-    phase_function: Rc<Material>,
+    phase_function: Arc<Material>,
 }
 
 impl ConstantMedium {
-    pub fn new(boundary: Rc<dyn Hittable>, density: f64, texture: Rc<Texture>) -> Self {
+    pub fn new(boundary: Arc<dyn Hittable>, density: f64, texture: Arc<Texture>) -> Self {
         Self {
             boundary,
             neg_inv_density: -1.0 / density,
-            phase_function: Rc::new(Material::isotropic(texture)),
+            phase_function: Arc::new(Material::isotropic(texture)),
         }
     }
 
-    pub fn from_color(boundary: Rc<dyn Hittable>, density: f64, albedo: Color) -> Self {
+    pub fn from_color(boundary: Arc<dyn Hittable>, density: f64, albedo: Color) -> Self {
         Self {
             boundary,
             neg_inv_density: -1.0 / density,
-            phase_function: Rc::new(Material::isotropic_from_color(albedo)),
+            phase_function: Arc::new(Material::isotropic_from_color(albedo)),
         }
     }
 }
@@ -56,7 +56,7 @@ impl Hittable for ConstantMedium {
         }
 
         let t = hit_1.t + hit_distance / ray_length;
-        let hit = HitRecord::new(ray.at(t), t, Rc::clone(&self.phase_function), (0.0, 0.0));
+        let hit = HitRecord::new(ray.at(t), t, Arc::clone(&self.phase_function), (0.0, 0.0));
 
         Some(hit)
     }

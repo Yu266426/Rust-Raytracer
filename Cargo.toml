@@ -6,4 +6,5 @@ edition = "2021"
 [dependencies]
 image = "0.25.5"
 nanorand = "0.7.0"
+rayon = "1.10.0"
 

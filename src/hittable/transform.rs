@@ -1,17 +1,17 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::{interval::Interval, ray::Ray, vec3::Vec3};
 
 use super::{aabb::AABB, HitRecord, Hittable};
 
 pub struct Translate {
-    object: Rc<dyn Hittable>,
+    object: Arc<dyn Hittable>,
     offset: Vec3,
     bounding_box: AABB,
 }
 
 impl Translate {
-    pub fn new(object: Rc<dyn Hittable>, offset: Vec3) -> Self {
+    pub fn new(object: Arc<dyn Hittable>, offset: Vec3) -> Self {
         let bbox = object.bounding_box() + offset;
         Self {
             object,
@@ -41,14 +41,14 @@ impl Hittable for Translate {
 }
 
 pub struct RotateY {
-    object: Rc<dyn Hittable>,
+    object: Arc<dyn Hittable>,
     sin_theta: f64,
     cos_theta: f64,
     bounding_box: AABB,
 }
 
 impl RotateY {
-    pub fn new(object: Rc<dyn Hittable>, angle: f64) -> Self {
+    pub fn new(object: Arc<dyn Hittable>, angle: f64) -> Self {
         let radians = angle.to_radians();
 
         let sin_theta = radians.sin();

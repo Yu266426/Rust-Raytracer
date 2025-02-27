@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use nanorand::{tls_rng, Rng};
 
@@ -11,17 +11,17 @@ pub enum Material {
         refraction_index: f64,
     },
     DiffuseLight {
-        texture: Rc<Texture>,
+        texture: Arc<Texture>,
     },
     Lambertian {
-        texture: Rc<Texture>,
+        texture: Arc<Texture>,
     },
     Metal {
         albedo: Color,
         roughness: f64,
     },
     Isotropic {
-        texture: Rc<Texture>,
+        texture: Arc<Texture>,
     },
 }
 
@@ -34,23 +34,23 @@ impl Material {
         }
     }
 
-    pub fn diffuse_light(texture: Rc<Texture>) -> Self {
+    pub fn diffuse_light(texture: Arc<Texture>) -> Self {
         Self::DiffuseLight { texture }
     }
 
     pub fn diffuse_light_from_color(albedo: Color) -> Self {
         Self::DiffuseLight {
-            texture: Rc::new(Texture::color(albedo)),
+            texture: Arc::new(Texture::color(albedo)),
         }
     }
 
-    pub fn lambertian(texture: Rc<Texture>) -> Self {
+    pub fn lambertian(texture: Arc<Texture>) -> Self {
         Self::Lambertian { texture }
     }
 
     pub fn lambertian_from_color(albedo: Color) -> Self {
         Self::Lambertian {
-            texture: Rc::new(Texture::color(albedo)),
+            texture: Arc::new(Texture::color(albedo)),
         }
     }
 
@@ -58,13 +58,13 @@ impl Material {
         Self::Metal { albedo, roughness }
     }
 
-    pub fn isotropic(texture: Rc<Texture>) -> Self {
+    pub fn isotropic(texture: Arc<Texture>) -> Self {
         Self::Isotropic { texture }
     }
 
     pub fn isotropic_from_color(albedo: Color) -> Self {
         Self::Isotropic {
-            texture: Rc::new(Texture::color(albedo)),
+            texture: Arc::new(Texture::color(albedo)),
         }
     }
 }
@@ -84,7 +84,7 @@ impl Material {
             Material::Isotropic { texture } => Self::isotropic_scatter(texture, ray, hit_record),
         }
     }
-    
+
     /// Calculates Schlick's approximation for reflectance
     fn dielectric_reflectance(cos: f64, refraction_index: f64) -> f64 {
         // Use Schlick's approximation for reflectance
@@ -130,7 +130,7 @@ impl Material {
     }
 
     fn lambertian_scatter(
-        texture: &Rc<Texture>,
+        texture: &Arc<Texture>,
         ray: &Ray,
         hit_record: &HitRecord,
     ) -> Option<(Color, Ray)> {
@@ -167,7 +167,7 @@ impl Material {
     }
 
     fn isotropic_scatter(
-        texture: &Rc<Texture>,
+        texture: &Arc<Texture>,
         ray: &Ray,
         hit_record: &HitRecord,
     ) -> Option<(Color, Ray)> {

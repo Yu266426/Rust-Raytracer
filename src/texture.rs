@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::{
     image::{color::Color, ExtImage},
@@ -9,8 +9,8 @@ use crate::{
 pub enum Texture {
     Checker {
         inv_scale: f64,
-        even: Rc<Texture>,
-        odd: Rc<Texture>,
+        even: Arc<Texture>,
+        odd: Arc<Texture>,
     },
     Image {
         image: ExtImage,
@@ -25,7 +25,7 @@ pub enum Texture {
 }
 
 impl Texture {
-    pub fn checker(scale: f64, even: Rc<Self>, odd: Rc<Self>) -> Self {
+    pub fn checker(scale: f64, even: Arc<Self>, odd: Arc<Self>) -> Self {
         Self::Checker {
             inv_scale: 1.0 / scale,
             even,
@@ -36,8 +36,8 @@ impl Texture {
     pub fn checker_from_colors(scale: f64, color_1: Color, color_2: Color) -> Self {
         Self::checker(
             scale,
-            Rc::new(Self::color(color_1)),
-            Rc::new(Self::color(color_2)),
+            Arc::new(Self::color(color_1)),
+            Arc::new(Self::color(color_2)),
         )
     }
 
@@ -81,8 +81,8 @@ impl Texture {
 
     fn checker_value(
         inv_scale: f64,
-        even: &Rc<Texture>,
-        odd: &Rc<Texture>,
+        even: &Arc<Texture>,
+        odd: &Arc<Texture>,
         uv: (f64, f64),
         pos: &Vec3,
     ) -> Color {

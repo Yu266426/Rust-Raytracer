@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::{interval::Interval, material::Material, ray::Ray, vec3::Vec3};
 
@@ -9,13 +9,13 @@ pub struct Quad {
     u: Vec3,
     v: Vec3,
     w: Vec3,
-    material: Rc<Material>,
+    material: Arc<Material>,
     bounding_box: AABB,
     normal: Vec3,
     d: f64,
 }
 
-pub fn quad_box(a: Vec3, b: Vec3, material: Rc<Material>) -> Rc<HittableList> {
+pub fn quad_box(a: Vec3, b: Vec3, material: Arc<Material>) -> Arc<HittableList> {
     let mut sides = HittableList::new();
 
     let min = Vec3::new(a.x.min(b.x), a.y.min(b.y), a.z.min(b.z));
@@ -25,48 +25,48 @@ pub fn quad_box(a: Vec3, b: Vec3, material: Rc<Material>) -> Rc<HittableList> {
     let dy = Vec3::new(0.0, max.y - min.y, 0.0);
     let dz = Vec3::new(0.0, 0.0, max.z - min.z);
 
-    sides.add(Rc::new(Quad::new(
+    sides.add(Arc::new(Quad::new(
         Vec3::new(min.x, min.y, max.z),
         dx,
         dy,
-        Rc::clone(&material),
+        Arc::clone(&material),
     )));
-    sides.add(Rc::new(Quad::new(
+    sides.add(Arc::new(Quad::new(
         Vec3::new(max.x, min.y, max.z),
         -dz,
         dy,
-        Rc::clone(&material),
+        Arc::clone(&material),
     )));
-    sides.add(Rc::new(Quad::new(
+    sides.add(Arc::new(Quad::new(
         Vec3::new(max.x, min.y, min.z),
         -dx,
         dy,
-        Rc::clone(&material),
+        Arc::clone(&material),
     )));
-    sides.add(Rc::new(Quad::new(
+    sides.add(Arc::new(Quad::new(
         Vec3::new(min.x, min.y, min.z),
         dz,
         dy,
-        Rc::clone(&material),
+        Arc::clone(&material),
     )));
-    sides.add(Rc::new(Quad::new(
+    sides.add(Arc::new(Quad::new(
         Vec3::new(min.x, max.y, max.z),
         dx,
         -dz,
-        Rc::clone(&material),
+        Arc::clone(&material),
     )));
-    sides.add(Rc::new(Quad::new(
+    sides.add(Arc::new(Quad::new(
         Vec3::new(min.x, min.y, min.z),
         dx,
         dz,
-        Rc::clone(&material),
+        Arc::clone(&material),
     )));
 
-    Rc::new(sides)
+    Arc::new(sides)
 }
 
 impl Quad {
-    pub fn new(corner: Vec3, u: Vec3, v: Vec3, material: Rc<Material>) -> Self {
+    pub fn new(corner: Vec3, u: Vec3, v: Vec3, material: Arc<Material>) -> Self {
         let n = u.cross(&v);
         let normal = n.normalize();
         let d = normal.dot(&corner); // D part of plane: Ax + By + Cz = D
@@ -124,7 +124,8 @@ impl Hittable for Quad {
 
         let intersection = ray.at(t);
 
-        let mut hit_record = HitRecord::new(intersection, t, Rc::clone(&self.material), (0.0, 0.0));
+        let mut hit_record =
+            HitRecord::new(intersection, t, Arc::clone(&self.material), (0.0, 0.0));
 
         // If hit point is within the quad on the plane
         let planar_hit_vector = intersection - self.corner;

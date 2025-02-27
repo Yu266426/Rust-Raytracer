@@ -1,4 +1,4 @@
-use std::{f64::consts::PI, rc::Rc};
+use std::{f64::consts::PI, sync::Arc};
 
 use crate::{interval::Interval, material::Material, ray::Ray, vec3::Vec3};
 
@@ -7,12 +7,12 @@ use super::{aabb::AABB, HitRecord, Hittable};
 pub struct Sphere {
     center: Ray,
     radius: f64,
-    material: Rc<Material>,
+    material: Arc<Material>,
     bounding_box: AABB,
 }
 
 impl Sphere {
-    pub fn still(center: Vec3, radius: f64, material: Rc<Material>) -> Self {
+    pub fn still(center: Vec3, radius: f64, material: Arc<Material>) -> Self {
         let r_vec = Vec3::new(radius, radius, radius);
 
         Self {
@@ -23,7 +23,7 @@ impl Sphere {
         }
     }
 
-    pub fn moving(start: Vec3, end: Vec3, radius: f64, material: Rc<Material>) -> Self {
+    pub fn moving(start: Vec3, end: Vec3, radius: f64, material: Arc<Material>) -> Self {
         let r_vec = Vec3::new(radius, radius, radius);
 
         let box_1 = AABB::from_corners(start - r_vec, start + r_vec);
@@ -78,7 +78,7 @@ impl Hittable for Sphere {
         let outward_normal = (hit_pos - center) / self.radius;
 
         let uv = Self::get_sphere_uv(&outward_normal);
-        let mut hit_record = HitRecord::new(hit_pos, root, Rc::clone(&self.material), uv);
+        let mut hit_record = HitRecord::new(hit_pos, root, Arc::clone(&self.material), uv);
         hit_record.set_face_normal(ray, (hit_record.pos - center) / self.radius);
 
         Some(hit_record)

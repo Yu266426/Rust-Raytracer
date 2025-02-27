@@ -8,6 +8,7 @@ use std::{
 use color::Color;
 use image::{open, RgbImage};
 
+#[derive(Debug)]
 pub struct Image {
     width: usize,
     height: usize,
