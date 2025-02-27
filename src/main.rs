@@ -3,7 +3,12 @@ use std::{rc::Rc, time::Instant};
 use nanorand::{tls_rng, Rng};
 use raytracer::{
     camera::Camera,
-    hittable::{bvh::BVHNode, quad::Quad, sphere::Sphere, HittableList},
+    hittable::{
+        bvh::BVHNode,
+        quad::{quad_box, Quad},
+        sphere::Sphere,
+        HittableList,
+    },
     image::color::Color,
     material::Material,
     random::gen_range_f64,
@@ -468,11 +473,23 @@ fn cornell_box() -> (HittableList, Camera) {
         Rc::clone(&white),
     )));
 
+    world.add(quad_box(
+        Vec3::new(130.0, 0.0, 65.0),
+        Vec3::new(295.0, 165.0, 230.0),
+        Rc::new(Material::lambertian_from_color(Color::white())),
+    ));
+
+    world.add(quad_box(
+        Vec3::new(265.0, 0.0, 295.0),
+        Vec3::new(430.0, 330.0, 460.0),
+        Rc::new(Material::lambertian_from_color(Color::white())),
+    ));
+
     (
         world,
         Camera::new(
             1.0,
-            600,
+            200,
             40.0,
             Vec3::new(278.0, 278.0, -800.0),
             Vec3::new(278.0, 278.0, 0.0),
@@ -480,13 +497,13 @@ fn cornell_box() -> (HittableList, Camera) {
             1.0,
             Color::new(0.0, 0.0, 0.0),
             200,
-            50,
+            100,
         ),
     )
 }
 
 fn main() {
-    let (world, camera) = match 1 {
+    let (world, camera) = match 7 {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
         3 => earth(),

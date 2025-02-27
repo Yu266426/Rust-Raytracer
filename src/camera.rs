@@ -1,6 +1,6 @@
 use std::{
-    cell::RefCell,
     io::{self, Write},
+    sync::Mutex,
 };
 
 use nanorand::{Rng, WyRand};
@@ -32,7 +32,7 @@ pub struct Camera {
     pub samples_per_pixel: usize,
     pub pixel_samples_scale: f64,
     pub max_depth: usize,
-    rng: RefCell<WyRand>,
+    rng: Mutex<WyRand>,
 }
 
 impl Camera {
@@ -56,7 +56,7 @@ impl Camera {
             samples_per_pixel: 10,
             pixel_samples_scale: 0.0,
             max_depth: 10,
-            rng: RefCell::new(WyRand::new()),
+            rng: Mutex::new(WyRand::new()),
         }
     }
 
@@ -160,13 +160,13 @@ impl Camera {
         };
 
         let ray_direction = pixel_sample_pos - ray_origin;
-        let ray_time = self.rng.borrow_mut().generate();
+        let ray_time = self.rng.lock().unwrap().generate();
 
         Ray::new(ray_origin, ray_direction, ray_time)
     }
 
     fn sample_square(&self) -> Vec3 {
-        let mut rng = self.rng.borrow_mut();
+        let mut rng = self.rng.lock().unwrap();
         Vec3::new(
             rng.generate::<f64>() - 0.5,
             rng.generate::<f64>() - 0.5,

@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::{interval::Interval, material::Material, ray::Ray, vec3::Vec3};
 
-use super::{aabb::AABB, HitRecord, Hittable};
+use super::{aabb::AABB, HitRecord, Hittable, HittableList};
 
 pub struct Quad {
     corner: Vec3,
@@ -13,6 +13,56 @@ pub struct Quad {
     bounding_box: AABB,
     normal: Vec3,
     d: f64,
+}
+
+pub fn quad_box(a: Vec3, b: Vec3, material: Rc<Material>) -> Rc<HittableList> {
+    let mut sides = HittableList::new();
+
+    let min = Vec3::new(a.x.min(b.x), a.y.min(b.y), a.z.min(b.z));
+    let max = Vec3::new(a.x.max(b.x), a.y.max(b.y), a.z.max(b.z));
+
+    let dx = Vec3::new(max.x - min.x, 0.0, 0.0);
+    let dy = Vec3::new(0.0, max.y - min.y, 0.0);
+    let dz = Vec3::new(0.0, 0.0, max.z - min.z);
+
+    sides.add(Rc::new(Quad::new(
+        Vec3::new(min.x, min.y, max.z),
+        dx,
+        dy,
+        Rc::clone(&material),
+    )));
+    sides.add(Rc::new(Quad::new(
+        Vec3::new(max.x, min.y, max.z),
+        -dz,
+        dy,
+        Rc::clone(&material),
+    )));
+    sides.add(Rc::new(Quad::new(
+        Vec3::new(max.x, min.y, min.z),
+        -dx,
+        dy,
+        Rc::clone(&material),
+    )));
+    sides.add(Rc::new(Quad::new(
+        Vec3::new(min.x, min.y, min.z),
+        dz,
+        dy,
+        Rc::clone(&material),
+    )));
+    sides.add(Rc::new(Quad::new(
+        Vec3::new(min.x, max.y, max.z),
+        dx,
+        -dz,
+        Rc::clone(&material),
+    )));
+    sides.add(Rc::new(Quad::new(
+        Vec3::new(min.x, min.y, min.z),
+        dx,
+        dz,
+        Rc::clone(&material),
+    )));
+
+    Rc::new(sides)
 }
 
 impl Quad {
