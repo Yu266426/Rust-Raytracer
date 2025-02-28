@@ -12,7 +12,7 @@ pub struct Quad {
     material: Arc<Material>,
     bounding_box: AABB,
     normal: Vec3,
-    d: f64
+    d: f64,
 }
 
 pub fn quad_box(a: Vec3, b: Vec3, material: Arc<Material>) -> Arc<HittableList> {
@@ -80,7 +80,7 @@ impl Quad {
             material,
             bounding_box: Self::find_bounding_box(corner, u, v),
             normal,
-            d
+            d,
         }
     }
 
@@ -90,26 +90,13 @@ impl Quad {
 
         AABB::from_aabbs(&bounding_box_diagonal_1, &bounding_box_diagonal_2)
     }
-
-    fn is_interior(a: f64, b: f64, hit_record: &mut HitRecord) -> bool {
-        // Commented out is implementation for triangles
-        // if a <= 0.0 || b <= 0.0 || a + b >= 1.0 {
-        //     return false;
-        // }
-
-        if a < 0.0 || a > 1.0 || b < 0.0 || b > 1.0 {
-            return false;
-        }
-
-        hit_record.uv = (a, b);
-        true
-    }
 }
 
 impl Hittable for Quad {
     fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<HitRecord> {
         let denom = self.normal.dot(&ray.direction);
 
+        // Early return if ray is parallel to the quad
         if denom.abs() < f64::EPSILON {
             return None;
         }
@@ -120,19 +107,25 @@ impl Hittable for Quad {
         }
 
         let intersection = ray.at(t);
-
-        let mut hit_record =
-            HitRecord::new(intersection, t, Arc::clone(&self.material), (0.0, 0.0));
-
-        // If hit point is within the quad on the plane
         let planar_hit_vector = intersection - self.corner;
+
+        // Calculate alpha and beta (parametric coordinates)
         let alpha = self.w.dot(&planar_hit_vector.cross(&self.v));
         let beta = self.w.dot(&self.u.cross(&planar_hit_vector));
 
-        if !Self::is_interior(alpha, beta, &mut hit_record) {
+        // Check if hit point is within the quad
+        if alpha < 0.0 || alpha > 1.0 || beta < 0.0 || beta > 1.0 {
             return None;
         }
 
+        // Commented out is implementation for triangles
+        // if a <= 0.0 || b <= 0.0 || a + b >= 1.0 {
+        //     return false;
+        // }
+
+        // Create hit record only after confirming it's a valid hit
+        let mut hit_record =
+            HitRecord::new(intersection, t, Arc::clone(&self.material), (alpha, beta));
         hit_record.set_face_normal(ray, self.normal);
 
         Some(hit_record)

@@ -493,14 +493,14 @@ fn cornell_box() -> (HittableList, Camera) {
         world,
         Camera::new(
             1.0,
-            400,
+            800,
             40.0,
             Vec3::new(278.0, 278.0, -800.0),
             Vec3::new(278.0, 278.0, 0.0),
             0.0,
             1.0,
             Color::new(0.0, 0.0, 0.0),
-            500,
+            800,
             100,
         ),
     )
@@ -650,7 +650,7 @@ fn final_scene() -> (HittableList, Camera) {
 }
 
 fn main() {
-    let (world, camera) = match 8 {
+    let (world, camera) = match 7 {
         0 => weekend_1(),
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
