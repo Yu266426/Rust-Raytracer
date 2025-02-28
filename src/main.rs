@@ -86,8 +86,6 @@ fn weekend_1() -> (HittableList, Camera) {
         material_3,
     )));
 
-    let world = HittableList::from_object(Arc::new(BVHNode::from_hittable_list(world)));
-
     (
         world,
         Camera::new(
@@ -173,8 +171,6 @@ fn bouncing_spheres() -> (HittableList, Camera) {
         1.0,
         material_3,
     )));
-
-    let world = HittableList::from_object(Arc::new(BVHNode::from_hittable_list(world)));
 
     (
         world,
@@ -493,8 +489,6 @@ fn cornell_box() -> (HittableList, Camera) {
         Color::white(),
     )));
 
-    let world = HittableList::from_object(Arc::new(BVHNode::from_hittable_list(world)));
-
     (
         world,
         Camera::new(
@@ -532,7 +526,7 @@ fn final_scene() -> (HittableList, Camera) {
 
             boxes1.add(quad_box(
                 Vec3::new(x0, y0, z0),
-                Vec3::new(x1 - x0, y1 - y0, z1 - z0),
+                Vec3::new(x1, y1, z1),
                 Arc::clone(&ground),
             ));
         }
@@ -656,7 +650,7 @@ fn final_scene() -> (HittableList, Camera) {
 }
 
 fn main() {
-    let (world, camera) = match 7 {
+    let (world, camera) = match 8 {
         0 => weekend_1(),
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
@@ -670,7 +664,8 @@ fn main() {
     };
 
     let now = Instant::now();
-    camera.render_single_threaded(&world).save("test");
+    // camera.render_single_threaded(&world).save("test");
+    camera.render(&world).save("test");
     let elapsed_time = now.elapsed();
 
     println!("Rendering took {:.2} seconds.", elapsed_time.as_secs_f64());

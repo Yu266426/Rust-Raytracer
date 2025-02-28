@@ -2,11 +2,12 @@ use std::{
     io::{self, Write},
     sync::{
         atomic::{AtomicUsize, Ordering},
-        Arc, Mutex,
+        Arc,
     },
 };
 
 use nanorand::{Rng, WyRand};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use crate::{
     hittable::Hittable,
@@ -149,74 +150,80 @@ impl Camera {
     }
 
     pub fn render<H: Hittable + Sync>(&self, world: &H) -> Image {
-        let image = Arc::new(Mutex::new(Image::new(self.image_width, self.image_height)));
+        let mut image = Image::new(self.image_width, self.image_height);
 
-        // Create a progress counter with thread-safe access
-        let scanlines_processed = Arc::new(AtomicUsize::new(0));
+        // Define square chunk dimensions
+        let chunk_size = if self.image_width > 400 || self.image_height > 400 {
+            128
+        } else {
+            64
+        };
 
-        let chunk_size = 32;
+        // Calculate the number of chunks in each dimension
+        let chunks_x = (self.image_width + chunk_size - 1) / chunk_size;
+        let chunks_y = (self.image_height + chunk_size - 1) / chunk_size;
+        let total_chunks = chunks_x * chunks_y;
 
-        rayon::scope(|s| {
-            for chunk_y in (0..self.image_height).step_by(chunk_size) {
-                for chunk_x in (0..self.image_width).step_by(chunk_size) {
-                    let scanlines_counter = Arc::clone(&scanlines_processed);
-                    let image_ref = Arc::clone(&image);
+        let chunks_remaining = Arc::new(AtomicUsize::new(total_chunks));
 
-                    s.spawn(move |_| {
-                        let mut rng = WyRand::new();
+        // Initial progress report
+        println!(
+            "Starting render: {} chunks to process ({} x {})",
+            total_chunks, chunks_x, chunks_y
+        );
 
-                        // Process each pixel in the chunk
-                        let max_y = (chunk_y + chunk_size).min(self.image_height);
-                        let max_x = (chunk_x + chunk_size).min(self.image_width);
+        // Create a collection of all chunk coordinates
+        let chunk_coordinates: Vec<(usize, usize)> = (0..chunks_y)
+            .flat_map(|chunk_y| (0..chunks_x).map(move |chunk_x| (chunk_x, chunk_y)))
+            .collect();
 
-                        let mut chunk_pixels =
-                            Vec::with_capacity((max_y - chunk_y) * (max_x - chunk_x));
+        // Process chunks in parallel and collect the results
+        let chunk_results: Vec<_> = chunk_coordinates
+            .into_par_iter()
+            .map(|(chunk_x, chunk_y)| {
+                let mut rng = WyRand::new();
+                let mut local_buffer = Vec::with_capacity(chunk_size * chunk_size);
 
-                        for row in chunk_y..max_y {
-                            for col in chunk_x..max_x {
-                                let mut pixel_color = Color::black();
+                // Calculate pixel bounds for this chunk
+                let start_x = chunk_x * chunk_size;
+                let start_y = chunk_y * chunk_size;
+                let end_x = std::cmp::min(start_x + chunk_size, self.image_width);
+                let end_y = std::cmp::min(start_y + chunk_size, self.image_height);
 
-                                for _ in 0..self.samples_per_pixel {
-                                    let ray = self.get_ray(col, row, &mut rng);
-                                    pixel_color += self.ray_color(ray, self.max_depth, world);
-                                }
+                // Process all pixels in the chunk
+                for row in start_y..end_y {
+                    for col in start_x..end_x {
+                        let mut pixel_color = Color::black();
 
-                                chunk_pixels.push((
-                                    row,
-                                    col,
-                                    pixel_color * self.pixel_samples_scale,
-                                ));
-                            }
+                        for _ in 0..self.samples_per_pixel {
+                            let ray = self.get_ray(col, row, &mut rng);
+                            pixel_color += self.ray_color(ray, self.max_depth, world);
                         }
 
-                        // Update the image with our chunk results
-                        {
-                            let mut img = image_ref.lock().unwrap();
-                            for (row, col, color) in chunk_pixels {
-                                img.set_pixel(color, row, col);
-                            }
-                        }
-
-                        // Progress reporting (once per chunk)
-                        let processed = scanlines_counter.fetch_add(1, Ordering::Relaxed);
-                        let total_chunks = ((self.image_height + chunk_size - 1) / chunk_size)
-                            * ((self.image_width + chunk_size - 1) / chunk_size);
-                        let remaining = total_chunks - processed;
-
-                        print!("\rChunks remaining: {} ", remaining);
-                        io::stdout().flush().unwrap();
-                    });
+                        local_buffer.push((row, col, pixel_color * self.pixel_samples_scale));
+                    }
                 }
+
+                // Update progress after each chunk is processed
+                let remaining = chunks_remaining.fetch_sub(1, Ordering::Relaxed) - 1;
+                print!("\rChunks remaining: {}/{} ", remaining, total_chunks);
+                if let Err(e) = io::stdout().flush() {
+                    eprintln!("Warning: Could not flush stdout: {}", e);
+                }
+
+                local_buffer
+            })
+            .collect();
+
+        // Set the pixels of the image
+        for chunk_result in chunk_results {
+            for (row, col, color) in chunk_result {
+                image.set_pixel(color, row, col);
             }
-        });
+        }
 
-        println!("\rDone!                             ");
-
-        // Unwrap the Arc<Mutex<Image>> to get the final Image
-        Arc::try_unwrap(image)
-            .expect("There should be no more references to the image")
-            .into_inner()
-            .expect("Mutex should not be poisoned")
+        println!("\rDone!                                          ");
+        image
     }
 
     fn get_ray(&self, col: usize, row: usize, rng: &mut WyRand) -> Ray {
@@ -262,7 +269,7 @@ impl Camera {
             if let Some(hit_record) = world.hit(&ray, Interval::new(0.001, f64::INFINITY)) {
                 let emission = hit_record.material.emitted(hit_record.uv, &hit_record.pos);
                 // Emission is affected by all the attenuation up to this point
-                color = color + attenuation_accumulator.clone() * emission;
+                color = color + attenuation_accumulator * emission;
 
                 if let Some((attenuation, scattered)) =
                     hit_record.material.scatter(&ray, &hit_record)
@@ -278,7 +285,7 @@ impl Camera {
                 }
             } else {
                 // Hit nothing (Aka. hit background)
-                color = color + attenuation_accumulator * self.background.clone();
+                color = color + attenuation_accumulator * self.background;
                 break;
             }
         }

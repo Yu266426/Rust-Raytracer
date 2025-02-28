@@ -81,40 +81,22 @@ impl BVHNode {
 
 impl Hittable for BVHNode {
     fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<HitRecord> {
-        // if !self.bounding_box.hit(ray, ray_t.clone()) {
-        //     return None;
-        // }
-
-        // let hit_left = self.left.hit(ray, ray_t.clone());
-        // let hit_right = self.right.hit(
-        //     ray,
-        //     Interval::new(
-        //         ray_t.min,
-        //         if let Some(rec) = &hit_left {
-        //             rec.t
-        //         } else {
-        //             ray_t.max
-        //         },
-        //     ),
-        // );
-
-        // if let Some(_) = hit_right {
-        //     hit_right
-        // } else if let Some(_) = hit_left {
-        //     hit_left
-        // } else {
-        //     None
-        // }
-
         if !self.bounding_box.hit(ray, ray_t) {
             return None;
         }
 
+        // Check if the left child is hit
         let hit_left = self.left.hit(ray, ray_t);
 
-        let right_t_max = hit_left.as_ref().map_or(ray_t.max, |rec| rec.t);
-        let hit_right = self.right.hit(ray, Interval::new(ray_t.min, right_t_max));
+        // Only search the right child with a potentially reduced interval
+        let right_t = match &hit_left {
+            Some(rec) => Interval::new(ray_t.min, rec.t),
+            None => ray_t,
+        };
 
+        let hit_right = self.right.hit(ray, right_t);
+
+        // Return the closest hit
         hit_right.or(hit_left)
     }
 
