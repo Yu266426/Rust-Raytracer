@@ -58,12 +58,11 @@ impl AABB {
     }
 
     pub fn axis_interval(&self, n: usize) -> &Interval {
-        if n == 0 {
-            &self.x
-        } else if n == 1 {
-            &self.y
-        } else {
-            &self.z
+        match n {
+            0 => &self.x,
+            1 => &self.y,
+            2 => &self.z,
+            _ => panic!("Invalid axis index: {}", n),
         }
     }
 
@@ -84,35 +83,60 @@ impl AABB {
     }
 
     pub fn hit(&self, ray: &Ray, ray_t: Interval) -> bool {
+        // let ray_orig = ray.origin;
+        // let ray_dir = ray.direction;
+
+        // let mut ray_t = ray_t;
+
+        // for axis in 0..3 {
+        //     let ax = self.axis_interval(axis);
+        //     let ad_inv = 1.0 / ray_dir.get(axis);
+
+        //     let t0 = (ax.min - ray_orig.get(axis)) * ad_inv;
+        //     let t1 = (ax.max - ray_orig.get(axis)) * ad_inv;
+
+        //     if t0 < t1 {
+        //         if t0 > ray_t.min {
+        //             ray_t.min = t0
+        //         }
+        //         if t1 < ray_t.max {
+        //             ray_t.max = t1
+        //         }
+        //     } else {
+        //         if t1 > ray_t.min {
+        //             ray_t.min = t1;
+        //         }
+        //         if t0 < ray_t.max {
+        //             ray_t.max = t0;
+        //         }
+        //     }
+
+        //     if ray_t.max <= ray_t.min {
+        //         return false;
+        //     }
+        // }
+
+        // true
+
         let ray_orig = ray.origin;
         let ray_dir = ray.direction;
 
-        let mut ray_t = ray_t;
+        let mut tmin = ray_t.min;
+        let mut tmax = ray_t.max;
 
         for axis in 0..3 {
-            let ax = self.axis_interval(axis);
-            let ad_inv = 1.0 / ray_dir.get(axis);
+            let inv_d = 1.0 / ray_dir.get(axis);
+            let mut t0 = (self.axis_interval(axis).min - ray_orig.get(axis)) * inv_d;
+            let mut t1 = (self.axis_interval(axis).max - ray_orig.get(axis)) * inv_d;
 
-            let t0 = (ax.min - ray_orig.get(axis)) * ad_inv;
-            let t1 = (ax.max - ray_orig.get(axis)) * ad_inv;
-
-            if t0 < t1 {
-                if t0 > ray_t.min {
-                    ray_t.min = t0
-                }
-                if t1 < ray_t.max {
-                    ray_t.max = t1
-                }
-            } else {
-                if t1 > ray_t.min {
-                    ray_t.min = t1;
-                }
-                if t0 < ray_t.max {
-                    ray_t.max = t0;
-                }
+            if inv_d < 0.0 {
+                std::mem::swap(&mut t0, &mut t1);
             }
 
-            if ray_t.max <= ray_t.min {
+            tmin = tmin.max(t0);
+            tmax = tmax.min(t1);
+
+            if tmax <= tmin {
                 return false;
             }
         }
@@ -141,8 +165,8 @@ impl Add<Vec3> for AABB {
     fn add(self, rhs: Vec3) -> Self::Output {
         Self::Output {
             x: self.x + rhs.x,
-            y: self.y + rhs.x,
-            z: self.z + rhs.x,
+            y: self.y + rhs.y,
+            z: self.z + rhs.z,
         }
     }
 }
@@ -153,8 +177,8 @@ impl Add<Vec3> for &AABB {
     fn add(self, rhs: Vec3) -> Self::Output {
         Self::Output {
             x: self.x + rhs.x,
-            y: self.y + rhs.x,
-            z: self.z + rhs.x,
+            y: self.y + rhs.y,
+            z: self.z + rhs.z,
         }
     }
 }

@@ -493,6 +493,8 @@ fn cornell_box() -> (HittableList, Camera) {
         Color::white(),
     )));
 
+    let world = HittableList::from_object(Arc::new(BVHNode::from_hittable_list(world)));
+
     (
         world,
         Camera::new(
@@ -654,7 +656,7 @@ fn final_scene() -> (HittableList, Camera) {
 }
 
 fn main() {
-    let (world, camera) = match 1 {
+    let (world, camera) = match 7 {
         0 => weekend_1(),
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
@@ -668,7 +670,7 @@ fn main() {
     };
 
     let now = Instant::now();
-    camera.render(&world).save("test");
+    camera.render_single_threaded(&world).save("test");
     let elapsed_time = now.elapsed();
 
     println!("Rendering took {:.2} seconds.", elapsed_time.as_secs_f64());

@@ -123,17 +123,40 @@ impl Camera {
         self.defocus_disk_v = v * defocus_radius;
     }
 
+    pub fn render_single_threaded(&self, world: &impl Hittable) -> Image {
+        let mut image = Image::new(self.image_width, self.image_height);
+
+        let mut rng = WyRand::new();
+
+        for row in 0..self.image_height {
+            print!("\rScanlines remaining: {} ", self.image_height - row);
+            io::stdout().flush().unwrap();
+
+            for col in 0..self.image_width {
+                let mut color = Color::black();
+
+                for _ in 0..self.samples_per_pixel {
+                    let ray = self.get_ray(col, row, &mut rng);
+                    color += self.ray_color(ray, self.max_depth, world);
+                }
+
+                image.set_pixel(color * self.pixel_samples_scale, row, col);
+            }
+        }
+        println!("\rDone!                             ");
+
+        image
+    }
+
     pub fn render<H: Hittable + Sync>(&self, world: &H) -> Image {
         let image = Arc::new(Mutex::new(Image::new(self.image_width, self.image_height)));
 
         // Create a progress counter with thread-safe access
         let scanlines_processed = Arc::new(AtomicUsize::new(0));
 
-        // Let Rayon decide the optimal thread count based on your system
-        let chunk_size = 128; // Adjust this value based on your specific workload
+        let chunk_size = 32;
 
         rayon::scope(|s| {
-            // Process the image in square chunks for better cache locality
             for chunk_y in (0..self.image_height).step_by(chunk_size) {
                 for chunk_x in (0..self.image_width).step_by(chunk_size) {
                     let scanlines_counter = Arc::clone(&scanlines_processed);
@@ -153,13 +176,11 @@ impl Camera {
                             for col in chunk_x..max_x {
                                 let mut pixel_color = Color::black();
 
-                                // Sample each pixel
                                 for _ in 0..self.samples_per_pixel {
                                     let ray = self.get_ray(col, row, &mut rng);
                                     pixel_color += self.ray_color(ray, self.max_depth, world);
                                 }
 
-                                // Scale the pixel color
                                 chunk_pixels.push((
                                     row,
                                     col,
@@ -169,13 +190,14 @@ impl Camera {
                         }
 
                         // Update the image with our chunk results
-                        let mut img = image_ref.lock().unwrap();
-                        for (row, col, color) in chunk_pixels {
-                            img.set_pixel(color, row, col);
+                        {
+                            let mut img = image_ref.lock().unwrap();
+                            for (row, col, color) in chunk_pixels {
+                                img.set_pixel(color, row, col);
+                            }
                         }
-                        drop(img); // Explicitly release the lock
 
-                        // Progress reporting (once per chunk instead of per row)
+                        // Progress reporting (once per chunk)
                         let processed = scanlines_counter.fetch_add(1, Ordering::Relaxed);
                         let total_chunks = ((self.image_height + chunk_size - 1) / chunk_size)
                             * ((self.image_width + chunk_size - 1) / chunk_size);

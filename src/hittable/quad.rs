@@ -12,7 +12,7 @@ pub struct Quad {
     material: Arc<Material>,
     bounding_box: AABB,
     normal: Vec3,
-    d: f64,
+    d: f64
 }
 
 pub fn quad_box(a: Vec3, b: Vec3, material: Arc<Material>) -> Arc<HittableList> {
@@ -69,8 +69,7 @@ impl Quad {
     pub fn new(corner: Vec3, u: Vec3, v: Vec3, material: Arc<Material>) -> Self {
         let n = u.cross(&v);
         let normal = n.normalize();
-        let d = normal.dot(&corner); // D part of plane: Ax + By + Cz = D
-
+        let d = normal.dot(&corner);
         let w = n / n.dot(&n);
 
         Self {
@@ -81,7 +80,7 @@ impl Quad {
             material,
             bounding_box: Self::find_bounding_box(corner, u, v),
             normal,
-            d,
+            d
         }
     }
 
@@ -93,16 +92,14 @@ impl Quad {
     }
 
     fn is_interior(a: f64, b: f64, hit_record: &mut HitRecord) -> bool {
-        let unit_interal = Interval::new(0.0, 1.0);
-
-        if !unit_interal.contains(a) || !unit_interal.contains(b) {
-            return false;
-        }
-
         // Commented out is implementation for triangles
         // if a <= 0.0 || b <= 0.0 || a + b >= 1.0 {
         //     return false;
         // }
+
+        if a < 0.0 || a > 1.0 || b < 0.0 || b > 1.0 {
+            return false;
+        }
 
         hit_record.uv = (a, b);
         true

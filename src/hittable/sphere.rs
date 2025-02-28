@@ -79,7 +79,7 @@ impl Hittable for Sphere {
 
         let uv = Self::get_sphere_uv(&outward_normal);
         let mut hit_record = HitRecord::new(hit_pos, root, Arc::clone(&self.material), uv);
-        hit_record.set_face_normal(ray, (hit_record.pos - center) / self.radius);
+        hit_record.set_face_normal(ray, outward_normal);
 
         Some(hit_record)
     }

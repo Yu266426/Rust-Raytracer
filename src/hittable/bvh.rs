@@ -81,30 +81,41 @@ impl BVHNode {
 
 impl Hittable for BVHNode {
     fn hit(&self, ray: &Ray, ray_t: Interval) -> Option<HitRecord> {
-        if !self.bounding_box.hit(ray, ray_t.clone()) {
+        // if !self.bounding_box.hit(ray, ray_t.clone()) {
+        //     return None;
+        // }
+
+        // let hit_left = self.left.hit(ray, ray_t.clone());
+        // let hit_right = self.right.hit(
+        //     ray,
+        //     Interval::new(
+        //         ray_t.min,
+        //         if let Some(rec) = &hit_left {
+        //             rec.t
+        //         } else {
+        //             ray_t.max
+        //         },
+        //     ),
+        // );
+
+        // if let Some(_) = hit_right {
+        //     hit_right
+        // } else if let Some(_) = hit_left {
+        //     hit_left
+        // } else {
+        //     None
+        // }
+
+        if !self.bounding_box.hit(ray, ray_t) {
             return None;
         }
 
-        let hit_left = self.left.hit(ray, ray_t.clone());
-        let hit_right = self.right.hit(
-            ray,
-            Interval::new(
-                ray_t.min,
-                if let Some(rec) = &hit_left {
-                    rec.t
-                } else {
-                    ray_t.max
-                },
-            ),
-        );
+        let hit_left = self.left.hit(ray, ray_t);
 
-        if let Some(_) = hit_right {
-            hit_right
-        } else if let Some(_) = hit_left {
-            hit_left
-        } else {
-            None
-        }
+        let right_t_max = hit_left.as_ref().map_or(ray_t.max, |rec| rec.t);
+        let hit_right = self.right.hit(ray, Interval::new(ray_t.min, right_t_max));
+
+        hit_right.or(hit_left)
     }
 
     fn bounding_box(&self) -> &AABB {
