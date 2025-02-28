@@ -87,7 +87,7 @@ fn weekend_1() -> (HittableList, Camera) {
     )));
 
     (
-        world,
+        world.with_bvh(),
         Camera::new(
             ASPECT_RATIO,
             1200,
@@ -173,7 +173,7 @@ fn bouncing_spheres() -> (HittableList, Camera) {
     )));
 
     (
-        world,
+        world.with_bvh(),
         Camera::new(
             ASPECT_RATIO,
             IMAGE_WIDTH,
@@ -636,14 +636,14 @@ fn final_scene() -> (HittableList, Camera) {
         world,
         Camera::new(
             1.0,
-            800,
+            200,
             40.0,
             Vec3::new(478.0, 278.0, -600.0),
             Vec3::new(278.0, 278.0, 0.0),
             0.0,
             1.0,
             Color::new(0.0, 0.0, 0.0),
-            1000,
+            100,
             50,
         ),
     )

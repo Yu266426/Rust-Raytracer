@@ -8,6 +8,7 @@ pub mod transform;
 use std::sync::Arc;
 
 use aabb::AABB;
+use bvh::BVHNode;
 
 use crate::{interval::Interval, material::Material, ray::Ray, vec3::Vec3};
 
@@ -82,6 +83,10 @@ impl HittableList {
     pub fn add(&mut self, object: Arc<dyn Hittable>) {
         self.bounding_box = AABB::from_aabbs(&self.bounding_box, object.bounding_box());
         self.objects.push(object);
+    }
+
+    pub fn with_bvh(self) -> Self {
+        Self::from_object(Arc::new(BVHNode::from_hittable_list(self)))
     }
 }
 
