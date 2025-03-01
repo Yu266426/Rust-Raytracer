@@ -153,11 +153,7 @@ impl Camera {
         let mut image = Image::new(self.image_width, self.image_height);
 
         // Define square chunk dimensions
-        let chunk_size = if self.image_width > 400 || self.image_height > 400 {
-            128
-        } else {
-            64
-        };
+        let chunk_size = 64;
 
         // Calculate the number of chunks in each dimension
         let chunks_x = (self.image_width + chunk_size - 1) / chunk_size;
